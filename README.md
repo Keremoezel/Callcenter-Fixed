@@ -1,60 +1,146 @@
-# Hello Edge
+# CRM-System Dokumentation
 
-A minimal [Nuxt](https://nuxt.com) starter deployed on the Edge using [NuxtHub](https://hub.nuxt.com).
+## 📋 Inhaltsverzeichnis
 
-https://hello.nuxt.dev
+- [Überblick](#überblick)
+- [Datenbankschema](#datenbankschema)
+- [Installation](#installation)
+- [Entwicklung](#entwicklung)
+- [Deployment](#deployment)
 
-<a href="https://hello.nuxt.dev">
-<img src="https://github.com/nuxt-hub/hello-edge/assets/904724/99d1bd54-ef7e-4ac9-83ad-0a290f85edcf" alt="Hello World template for NuxtHub" />
-</a>
+## 🎯 Überblick
 
-## Features
+Dieses CRM-System wurde mit Nuxt.js entwickelt und bietet eine umfassende Lösung für die Verwaltung von Kundenbeziehungen, Teams und Aktivitäten.
 
-- Server-Side rendering on Cloudflare Workers
-- ESLint setup
-- Ready to add a database, blob and KV storage
-- One click deploy on 275+ locations for free
+## 💾 Datenbankschema
 
-## Setup
+### 1. Benutzerverwaltung (Benutzer & Teams)
 
-Make sure to install the dependencies with [pnpm](https://pnpm.io/installation#using-corepack):
+#### Benutzer (Users)
+
+- **Hauptmerkmale:**
+  - Keycloak-Integration für Authentifizierung
+  - Drei Rollen: Admin, Teamleiter, Agent
+  - Basis-Informationen:
+    - E-Mail (eindeutig)
+    - Name
+    - Avatar (optional)
+    - Erstellungs- und Aktualisierungsdatum
+
+#### Teams
+
+- **Struktur:**
+  - Eindeutiger Name
+  - Ein Teamleiter pro Team
+  - Mehrere Team-Mitglieder möglich
+  - Zeitstempel für Erstellung
+
+### 2. Kundenverwaltung
+
+#### Unternehmen (Companies)
+
+- **Gespeicherte Informationen:**
+  - Firmenname
+  - Rechtsform
+  - Branche
+  - Mitarbeiteranzahl
+  - Kontaktdaten
+    - Website
+    - Telefon
+    - E-Mail
+  - Standort
+    - Straße
+    - PLZ
+    - Stadt
+    - Bundesland
+  - Weitere Details
+    - Umsatzgröße
+    - Öffnungszeiten
+    - Gründungsdatum
+    - Beschreibung
+
+#### Kontakte (Contacts)
+
+- **Kontaktinformationen:**
+  - Vorname (Pflichtfeld)
+  - Nachname
+  - E-Mail
+  - Telefon
+  - Position im Unternehmen
+  - Primärkontakt-Status
+  - Soziale Medien
+    - LinkedIn
+    - Xing
+    - Facebook
+  - Geburtsdatum
+
+### 3. Aktivitätsmanagement
+
+#### Zuweisungen (Assignments)
+
+- **Details:**
+  - Verknüpfung zwischen Unternehmen und Agent/Team
+  - Zuweisung durch Benutzer
+  - Status-Tracking
+  - Zeitstempel der Zuweisung
+
+#### Aktivitäten (Activities)
+
+- **Arten:**
+  - Anrufe
+  - E-Mails
+  - Meetings
+  - Notizen
+- **Erfasst werden:**
+  - Betreff
+  - Inhalt
+  - Start- und Endzeit
+  - Verknüpfter Kontakt
+
+### 4. Gesprächsmanagement
+
+#### Gesprächsnotizen (Conversation Notes)
+
+- **Inhalte:**
+  - Gesprächsaufhänger
+  - Rechercheergebnisse
+  - Letzte Aktualisierung
+  - Aktualisiert durch
+
+## 🚀 Installation
 
 ```bash
+# Abhängigkeiten installieren
 pnpm install
-```
 
-You can update the main text displayed by creating a `.env`:
-
-```bash
-NUXT_PUBLIC_HELLO_TEXT="Hello my world!"
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
+# Entwicklungsserver starten
 pnpm dev
 ```
 
-## Production
+## 💻 Entwicklung
 
-Build the application for production:
+Der Entwicklungsserver läuft unter `http://localhost:3000`
+
+## 📦 Deployment
+
+Produktion Build erstellen:
 
 ```bash
 pnpm build
 ```
 
-## Deploy
+---
 
+### Technische Besonderheiten
 
-Deploy the application on the Edge with [NuxtHub](https://hub.nuxt.com) on your Cloudflare account:
+- SQLite Datenbank mit Drizzle ORM
+- Nuxt.js Frontend Framework
+- Keycloak Integration
+- Optimierte Datenbankabfragen
+- Robuste Fehlerbehandlung
 
-```bash
-npx nuxthub deploy
-```
+### Sicherheitsmerkmale
 
-Then checkout your server logs, analaytics and more in the [NuxtHub Admin](https://admin.hub.nuxt.com).
-
-You can also deploy using [Cloudflare Pages CI](https://hub.nuxt.com/docs/getting-started/deploy#cloudflare-pages-ci).
-
+- Rollenbasierte Zugriffskontrolle
+- Sichere Datenlöschung mit Cascade
+- Geschützte Benutzerauthentifizierung
