@@ -17,100 +17,234 @@
         </div>
 
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-          <h3 class="text-lg font-bold text-gray-800 mb-4">
-            Unternehmensinformationen
-          </h3>
+          <!-- Section Header with Edit Button -->
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">
+              Unternehmensinformationen
+            </h3>
+            <UButton
+              v-if="!isEditingCompanyInfo"
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-pencil"
+              @click="startEditingCompanyInfo"
+            >
+              Bearbeiten
+            </UButton>
+            <div v-else class="flex space-x-2">
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="outline"
+                @click="cancelEditingCompanyInfo"
+              >
+                Abbrechen
+              </UButton>
+              <UButton
+                size="sm"
+                color="primary"
+                @click="saveCompanyInfo"
+              >
+                Speichern
+              </UButton>
+            </div>
+          </div>
+
           <div class="grid grid-cols-4 gap-4">
+            <!-- Kundenname -->
             <div>
               <label class="text-sm text-gray-500">Kundenname</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.companyName }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.companyName"
+                size="sm"
+              />
             </div>
+
+            <!-- GesellschaftsForm -->
             <div>
               <label class="text-sm text-gray-500">GesellschaftsForm</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.companyForm }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.companyForm"
+                size="sm"
+              />
             </div>
+
+            <!-- Branche -->
             <div>
               <label class="text-sm text-gray-500">Branche</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.industry }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.industry"
+                size="sm"
+              />
             </div>
+
+            <!-- MitarbeiterAnzahl -->
             <div>
               <label class="text-sm text-gray-500">MitarbeiterAnzahl</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ formatEmployeeCount(selectedCustomer.employeeCount) }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.employeeCount"
+                size="sm"
+              />
             </div>
 
+            <!-- Webseite -->
             <div>
               <label class="text-sm text-gray-500">Webseite</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.website }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.website"
+                size="sm"
+              />
             </div>
+
+            <!-- TelefonNummer -->
             <div>
               <label class="text-sm text-gray-500">TelefonNummer</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.phoneNumber }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.phoneNumber"
+                size="sm"
+              />
             </div>
+
+            <!-- Mail -->
             <div>
               <label class="text-sm text-gray-500">Mail</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.email }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.email"
+                size="sm"
+              />
             </div>
+
+            <!-- Öffnungszeiten -->
             <div>
               <label class="text-sm text-gray-500">Öffnungszeiten</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.openingHours }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.openingHours"
+                size="sm"
+              />
             </div>
 
+            <!-- UmsatsGröße -->
             <div>
               <label class="text-sm text-gray-500">UmsatsGröße</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.revenueSize }}
               </p>
-            </div>
-            <div>
-              <label class="text-sm text-gray-500">Straße,Hausnummer</label>
-              <p class="font-bold text-gray-800">
-                {{ selectedCustomer.streetAddress }}
-              </p>
-            </div>
-            <div>
-              <label class="text-sm text-gray-500">Plz</label>
-              <p class="font-bold text-gray-800">
-                {{ selectedCustomer.postalCode }}
-              </p>
-            </div>
-            <div>
-              <label class="text-sm text-gray-500">Ort</label>
-              <p class="font-bold text-gray-800">{{ selectedCustomer.city }}</p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.revenueSize"
+                size="sm"
+              />
             </div>
 
+            <!-- Straße,Hausnummer -->
+            <div>
+              <label class="text-sm text-gray-500">Straße,Hausnummer</label>
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
+                {{ selectedCustomer.streetAddress }}
+              </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.streetAddress"
+                size="sm"
+              />
+            </div>
+
+            <!-- Plz -->
+            <div>
+              <label class="text-sm text-gray-500">Plz</label>
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
+                {{ selectedCustomer.postalCode }}
+              </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.postalCode"
+                size="sm"
+              />
+            </div>
+
+            <!-- Ort -->
+            <div>
+              <label class="text-sm text-gray-500">Ort</label>
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
+                {{ selectedCustomer.city }}
+              </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.city"
+                size="sm"
+              />
+            </div>
+
+            <!-- Bundesland -->
             <div>
               <label class="text-sm text-gray-500">Bundesland</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.state }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.state"
+                size="sm"
+              />
             </div>
+
+            <!-- Gründung -->
             <div>
               <label class="text-sm text-gray-500">Gründung</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.foundingDate }}
               </p>
+              <UInput
+                v-else
+                v-model="editedCompanyInfo.foundingDate"
+                size="sm"
+              />
             </div>
+
+            <!-- Beschreibung -->
             <div class="col-span-2">
               <label class="text-sm text-gray-500">Beschreibung</label>
-              <p class="font-bold text-gray-800">
+              <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.description }}
               </p>
+              <UTextarea
+                v-else
+                v-model="editedCompanyInfo.description"
+                :rows="2"
+              />
             </div>
           </div>
         </div>
@@ -183,187 +317,332 @@
         </div>
 
         <div class="mb-6">
+          <!-- Section Header with Edit Button -->
           <div class="flex justify-between items-center mb-3">
             <h3 class="text-lg font-bold text-gray-800">
               Kontakte({{ getContactCount(selectedCustomer) }})
             </h3>
-            <span class="text-sm text-gray-500"
-              >Primär({{ selectedCustomer.primaryContact.firstName }}) ↓</span
-            >
-          </div>
-
-          <div class="bg-blue-50 border border-gray-200 rounded-lg mb-3 p-4">
-            <div class="flex justify-between items-center mb-3">
-              <div class="flex items-center space-x-2">
-                <span
-                  class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
-                  >✓ Primär</span
-                >
-                <h4 class="font-bold text-gray-800">
-                  {{ selectedCustomer.primaryContact.firstName }}
-                </h4>
-              </div>
-              <div class="flex space-x-2">
-                <UButton
-                  size="sm"
-                  color="primary"
-                  @click="callContact(selectedCustomer.primaryContact)"
-                  >📞 Anrufen</UButton
-                >
-                <UButton
-                  size="sm"
-                  color="primary"
-                  variant="outline"
-                  @click="emailContact(selectedCustomer.primaryContact)"
-                  >✉️ Email</UButton
-                >
-              </div>
-            </div>
-
-            <div class="grid grid-cols-4 gap-4">
-              <div>
-                <label class="text-xs text-gray-500">Vorname</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.primaryContact.firstName }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Mail</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.primaryContact.email }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Telefonnummer</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.primaryContact.phoneNumber }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Position</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.primaryContact.position || "-" }}
-                </p>
-              </div>
-            </div>
-
-            <div
-              class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
-            >
-              <div>
-                <label class="text-xs text-gray-500">Geburtsdatum</label>
-                <p class="text-xs text-gray-600">
-                  {{ selectedCustomer.primaryContact.birthDate || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">LinkedIn</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{ selectedCustomer.primaryContact.social?.linkedin || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Xing</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{ selectedCustomer.primaryContact.social?.xing || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Facebook</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{ selectedCustomer.primaryContact.social?.facebook || "-" }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white border border-gray-200 rounded-lg mb-3 p-4">
-            <div class="flex justify-between items-center mb-3">
-              <div class="flex items-center space-x-2">
-                <span
-                  class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600"
-                  >- Sekundär</span
-                >
-                <h4 class="font-bold text-gray-800">Anna Schmidt</h4>
-              </div>
-              <div class="flex space-x-2">
+            <div class="flex items-center space-x-3">
+              <span v-if="!isEditingContacts" class="text-sm text-gray-500"
+                >Primär({{ selectedCustomer.primaryContact.firstName }}) ↓</span
+              >
+              <UButton
+                v-if="!isEditingContacts"
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                icon="i-heroicons-pencil"
+                @click="startEditingContacts"
+              >
+                Bearbeiten
+              </UButton>
+              <div v-else class="flex space-x-2">
                 <UButton
                   size="sm"
                   color="neutral"
                   variant="outline"
-                  @click="callContact('secondary')"
-                  >📞 Anrufen</UButton
+                  @click="cancelEditingContacts"
                 >
+                  Abbrechen
+                </UButton>
                 <UButton
                   size="sm"
-                  color="neutral"
-                  variant="outline"
-                  @click="emailContact('secondary')"
-                  >✉️ Email</UButton
+                  color="primary"
+                  @click="saveContacts"
                 >
-              </div>
-            </div>
-
-            <div class="grid grid-cols-4 gap-4">
-              <div>
-                <label class="text-xs text-gray-500">Vorname</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.secondaryContact?.firstName || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Mail</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.secondaryContact?.email || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Telefonnummer</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.secondaryContact?.phoneNumber || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Position</label>
-                <p class="font-bold text-sm text-gray-800">
-                  {{ selectedCustomer.secondaryContact?.position || "-" }}
-                </p>
-              </div>
-            </div>
-
-            <div
-              class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
-            >
-              <div>
-                <label class="text-xs text-gray-500">Geburtsdatum</label>
-                <p class="text-xs text-gray-600">
-                  {{ selectedCustomer.secondaryContact?.birthDate || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">LinkedIn</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{
-                    selectedCustomer.secondaryContact?.social?.linkedin || "-"
-                  }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Xing</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{ selectedCustomer.secondaryContact?.social?.xing || "-" }}
-                </p>
-              </div>
-              <div>
-                <label class="text-xs text-gray-500">Facebook</label>
-                <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                  {{
-                    selectedCustomer.secondaryContact?.social?.facebook || "-"
-                  }}
-                </p>
+                  Speichern
+                </UButton>
               </div>
             </div>
           </div>
+
+          <!-- VIEW MODE: Display contacts as before -->
+          <template v-if="!isEditingContacts">
+            <!-- Primary Contact -->
+            <div class="bg-blue-50 border border-gray-200 rounded-lg mb-3 p-4">
+              <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center space-x-2">
+                  <span
+                    class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
+                    >✓ Primär</span
+                  >
+                  <h4 class="font-bold text-gray-800">
+                    {{ selectedCustomer.primaryContact.firstName }}
+                  </h4>
+                </div>
+                <div class="flex space-x-2">
+                  <UButton
+                    size="sm"
+                    color="primary"
+                    @click="callContact(selectedCustomer.primaryContact)"
+                    >📞 Anrufen</UButton
+                  >
+                  <UButton
+                    size="sm"
+                    color="primary"
+                    variant="outline"
+                    @click="emailContact(selectedCustomer.primaryContact)"
+                    >✉️ Email</UButton
+                  >
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-4">
+                <div>
+                  <label class="text-xs text-gray-500">Vorname</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.primaryContact.firstName }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Mail</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.primaryContact.email }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Telefonnummer</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.primaryContact.phoneNumber }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Position</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.primaryContact.position || "-" }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
+              >
+                <div>
+                  <label class="text-xs text-gray-500">Geburtsdatum</label>
+                  <p class="text-xs text-gray-600">
+                    {{ selectedCustomer.primaryContact.birthDate || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">LinkedIn</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{ selectedCustomer.primaryContact.social?.linkedin || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Xing</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{ selectedCustomer.primaryContact.social?.xing || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Facebook</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{ selectedCustomer.primaryContact.social?.facebook || "-" }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Secondary Contact -->
+            <div class="bg-white border border-gray-200 rounded-lg mb-3 p-4">
+              <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center space-x-2">
+                  <span
+                    class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600"
+                    >- Sekundär</span
+                  >
+                  <h4 class="font-bold text-gray-800">
+                    {{ selectedCustomer.secondaryContact?.firstName || "Anna Schmidt" }}
+                  </h4>
+                </div>
+                <div class="flex space-x-2">
+                  <UButton
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    @click="callContact('secondary')"
+                    >📞 Anrufen</UButton
+                  >
+                  <UButton
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    @click="emailContact('secondary')"
+                    >✉️ Email</UButton
+                  >
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-4">
+                <div>
+                  <label class="text-xs text-gray-500">Vorname</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.secondaryContact?.firstName || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Mail</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.secondaryContact?.email || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Telefonnummer</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.secondaryContact?.phoneNumber || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Position</label>
+                  <p class="font-bold text-sm text-gray-800">
+                    {{ selectedCustomer.secondaryContact?.position || "-" }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
+              >
+                <div>
+                  <label class="text-xs text-gray-500">Geburtsdatum</label>
+                  <p class="text-xs text-gray-600">
+                    {{ selectedCustomer.secondaryContact?.birthDate || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">LinkedIn</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{
+                      selectedCustomer.secondaryContact?.social?.linkedin || "-"
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Xing</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{ selectedCustomer.secondaryContact?.social?.xing || "-" }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Facebook</label>
+                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
+                    {{
+                      selectedCustomer.secondaryContact?.social?.facebook || "-"
+                    }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- EDIT MODE: Loop through editable contacts -->
+          <template v-else>
+            <div
+              v-for="(contact, index) in editedContacts"
+              :key="index"
+              :class="[
+                'border border-gray-200 rounded-lg mb-3 p-4',
+                contact.isPrimary ? 'bg-blue-50' : 'bg-white'
+              ]"
+            >
+              <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center space-x-2">
+                  <!-- Primary/Secondary Badge -->
+                  <span
+                    :class="[
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs',
+                      contact.isPrimary
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600'
+                    ]"
+                  >
+                    {{ contact.isPrimary ? '✓ Primär' : '- Sekundär' }}
+                  </span>
+
+                  <!-- Set as Primary Button (only show for non-primary contacts) -->
+                  <UButton
+                    v-if="!contact.isPrimary"
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    @click="setPrimaryContact(index)"
+                  >
+                    Als Primär markieren
+                  </UButton>
+
+                  <h4 class="font-bold text-gray-800">
+                    {{ contact.firstName }}
+                  </h4>
+                </div>
+              </div>
+
+              <!-- Contact Fields (Editable) -->
+              <div class="grid grid-cols-4 gap-4">
+                <div>
+                  <label class="text-xs text-gray-500">Vorname</label>
+                  <UInput
+                    v-model="contact.firstName"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Mail</label>
+                  <UInput
+                    v-model="contact.email"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Telefonnummer</label>
+                  <UInput
+                    v-model="contact.phoneNumber"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Position</label>
+                  <UInput
+                    v-model="contact.position"
+                    size="sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Social Media Fields (Editable) -->
+              <div class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200">
+                <div>
+                  <label class="text-xs text-gray-500">Geburtsdatum</label>
+                  <UInput
+                    v-model="contact.birthDate"
+                    size="sm"
+                    type="date"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">LinkedIn</label>
+                  <UInput
+                    v-model="contact.social.linkedin"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Xing</label>
+                  <UInput
+                    v-model="contact.social.xing"
+                    size="sm"
+                  />
+                </div>
+                <div>
+                  <label class="text-xs text-gray-500">Facebook</label>
+                  <UInput
+                    v-model="contact.social.facebook"
+                    size="sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -384,8 +663,12 @@
 
 <script setup lang="ts">
 import type { Customer } from "~/composables/customers/useCustomers";
+import { ref, computed, watch } from "vue";
 
-defineProps<{
+// ============================================
+// PROPS & EMITS
+// ============================================
+const props = defineProps<{
   selectedCustomer: Customer | null;
   conversationHook: string;
   researchResult: string;
@@ -405,6 +688,154 @@ defineEmits<{
   (e: "updateResearch", value: string): void;
 }>();
 
+// ============================================
+// EDIT MODE STATE
+// ============================================
+// Controls whether company info section is in edit mode
+const isEditingCompanyInfo = ref(false);
+
+// Controls whether contacts section is in edit mode
+const isEditingContacts = ref(false);
+
+// ============================================
+// COMPANY INFO EDITING
+// ============================================
+// Temporary storage for company info while editing
+const editedCompanyInfo = ref({
+  companyName: "",
+  companyForm: "",
+  industry: "",
+  employeeCount: "",
+  website: "",
+  phoneNumber: "",
+  email: "",
+  openingHours: "",
+  revenueSize: "",
+  streetAddress: "",
+  postalCode: "",
+  city: "",
+  state: "",
+  foundingDate: "",
+  description: "",
+});
+
+// When user clicks the pen icon to edit company info
+const startEditingCompanyInfo = () => {
+  if (!props.selectedCustomer) return;
+
+  // Copy current customer data to editing fields
+  editedCompanyInfo.value = {
+    companyName: props.selectedCustomer.companyName,
+    companyForm: props.selectedCustomer.companyForm,
+    industry: props.selectedCustomer.industry,
+    employeeCount: props.selectedCustomer.employeeCount,
+    website: props.selectedCustomer.website,
+    phoneNumber: props.selectedCustomer.phoneNumber,
+    email: props.selectedCustomer.email,
+    openingHours: props.selectedCustomer.openingHours,
+    revenueSize: props.selectedCustomer.revenueSize,
+    streetAddress: props.selectedCustomer.streetAddress,
+    postalCode: props.selectedCustomer.postalCode,
+    city: props.selectedCustomer.city,
+    state: props.selectedCustomer.state,
+    foundingDate: props.selectedCustomer.foundingDate,
+    description: props.selectedCustomer.description,
+  };
+
+  // Enable edit mode
+  isEditingCompanyInfo.value = true;
+};
+
+// When user clicks save button for company info
+const saveCompanyInfo = () => {
+  // TODO: Here you would emit an event or call an API to save the changes
+  console.log("Saving company info:", editedCompanyInfo.value);
+
+  // Exit edit mode
+  isEditingCompanyInfo.value = false;
+};
+
+// When user clicks cancel button for company info
+const cancelEditingCompanyInfo = () => {
+  // Discard changes and exit edit mode
+  isEditingCompanyInfo.value = false;
+};
+
+// ============================================
+// CONTACTS EDITING
+// ============================================
+// Store contacts as an array for easy reordering
+const editedContacts = ref<any[]>([]);
+
+// When user clicks the pen icon to edit contacts
+const startEditingContacts = () => {
+  if (!props.selectedCustomer) return;
+
+  // Build contacts array with primary contact first
+  editedContacts.value = [
+    {
+      ...props.selectedCustomer.primaryContact,
+      isPrimary: true,
+      // Ensure social object exists
+      social: props.selectedCustomer.primaryContact.social || {
+        linkedin: "",
+        xing: "",
+        facebook: "",
+      },
+    },
+  ];
+
+  // Add secondary contact if it exists
+  if (props.selectedCustomer.secondaryContact) {
+    editedContacts.value.push({
+      ...props.selectedCustomer.secondaryContact,
+      isPrimary: false,
+      // Ensure social object exists
+      social: props.selectedCustomer.secondaryContact.social || {
+        linkedin: "",
+        xing: "",
+        facebook: "",
+      },
+    });
+  }
+
+  // Enable edit mode
+  isEditingContacts.value = true;
+};
+
+// When user marks a contact as primary
+const setPrimaryContact = (index: number) => {
+  // Set all contacts to not primary
+  editedContacts.value.forEach((contact) => {
+    contact.isPrimary = false;
+  });
+
+  // Set selected contact as primary
+  editedContacts.value[index].isPrimary = true;
+
+  // Reorder: Move primary contact to top
+  const primaryContact = editedContacts.value.splice(index, 1)[0];
+  editedContacts.value.unshift(primaryContact);
+};
+
+// When user clicks save button for contacts
+const saveContacts = () => {
+  // TODO: Here you would emit an event or call an API to save the changes
+  console.log("Saving contacts:", editedContacts.value);
+
+  // Exit edit mode
+  isEditingContacts.value = false;
+};
+
+// When user clicks cancel button for contacts
+const cancelEditingContacts = () => {
+  // Discard changes and exit edit mode
+  isEditingContacts.value = false;
+};
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 const formatEmployeeCount = (count: string) => {
   // If the count is already in range format (e.g., "0-50"), return as is
   if (count.includes("-")) return count;
