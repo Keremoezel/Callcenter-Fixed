@@ -157,7 +157,7 @@ export default eventHandler(async () => {
     {
       id: 4,
       companyName: "Perfekt GmbH",
-      project: "Projekt",
+      project: "test Projekt",
       status: "Hinzugefügt Am",
       assignedAgentId: 103,
       assignedAgentName: "Agent Tom",

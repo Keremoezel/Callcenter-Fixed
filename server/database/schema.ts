@@ -88,6 +88,7 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
 export const companies = sqliteTable("companies", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
+  project: text("project"),
   legalForm: text("legal_form"),
   industry: text("industry"),
   employeeCount: integer("employee_count"),

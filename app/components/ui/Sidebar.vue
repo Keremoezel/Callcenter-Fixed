@@ -1,64 +1,60 @@
 <script setup lang="ts">
-import UiSidebarItem from './Sidebaritem.vue'
+import UiSidebarItem from "./Sidebaritem.vue";
 
-const { user, hasRole } = useAuth()
-const { isOpen, isMobileOpen, toggle, closeMobile } = useSidebar()
+const { user, hasRole } = useAuth();
+const { isOpen, isMobileOpen, toggle, closeMobile } = useSidebar();
 
-const route = useRoute()
+const route = useRoute();
 
 // Navigation groups
 const navGroups = computed(() => [
   {
-    title: 'Hauptnavigation',
+    title: "Hauptnavigation",
     items: [
-      { to: '/', label: 'Dashboard', icon: 'dashboard' },
-      { to: '/aufgaben', label: 'Aufgaben', icon: 'clipboard' },
-      { to: '/calls', label: 'Anrufe', icon: 'phone' },
-      { to: '/kunden', label: 'Kunden', icon: 'contacts' },
-      { to: '/activities', label: 'Aktivitäten', icon: 'activities' },
-      { to: '/fls', label: 'FLS', icon: 'clipboard' }
-    ]
-  },
-  {
-    title: 'Team',
-    items: [
-      { to: '/teams/my', label: 'Mein Team', icon: 'teams' }
+      { to: "/", label: "Dashboard", icon: "dashboard" },
+      { to: "/aufgaben", label: "Aufgaben", icon: "clipboard" },
+      { to: "/calls", label: "Anrufe", icon: "phone" },
+      { to: "/kunden", label: "Kunden", icon: "contacts" },
+      { to: "/activities", label: "Aktivitäten", icon: "activities" },
+      { to: "/fls", label: "FLS", icon: "clipboard" },
     ],
-    show: hasRole('TeamLead') || hasRole('Agent')
   },
   {
-    title: 'Verwaltung',
+    title: "Team",
+    items: [{ to: "/teams/my", label: "Mein Team", icon: "teams" }],
+    show: hasRole("TeamLead") || hasRole("Agent"),
+  },
+  {
+    title: "Verwaltung",
     items: [
-      { to: '/teams', label: 'Teams', icon: 'teams' },
-      { to: '/users', label: 'Benutzer', icon: 'users' },
-      { to: '/call-scripts', label: 'Skripte', icon: 'clipboard' }
+      { to: "/teams", label: "Teams", icon: "teams" },
+      { to: "/users", label: "Benutzer", icon: "users" },
+      { to: "/call-scripts", label: "Skripte", icon: "clipboard" },
     ],
-    show: hasRole('Admin')
+    show: hasRole("Admin"),
   },
   {
-    title: 'Hilfe & Support',
-    items: [
-      { to: '/settings', label: 'Einstellungen', icon: 'cog' }
-    ]
-  }
-])
+    title: "Hilfe & Support",
+    items: [{ to: "/settings", label: "Einstellungen", icon: "cog" }],
+  },
+]);
 
 // Check if item is active
 const isItemActive = (to: string) => {
-  if (to === '/') {
-    return route.path === '/'
+  if (to === "/") {
+    return route.path === "/";
   }
-  return route.path.startsWith(to)
-}
+  return route.path.startsWith(to);
+};
 </script>
 
 <template>
   <!-- Desktop Sidebar -->
-  <aside 
+  <aside
     :class="[
       'hidden lg:flex flex-col h-full border-r border-red-200 bg-[var(--winered-dark)] text-[var(--winered-text)] flex-shrink-0',
       isOpen ? 'w-64' : 'w-16',
-      'transition-all duration-300 ease-in-out'
+      'transition-all duration-300 ease-in-out',
     ]"
     id="app-sidebar"
   >
@@ -72,14 +68,19 @@ const isItemActive = (to: string) => {
           class="inline-flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--winered-medium)] focus:outline-none"
           :title="isOpen ? 'Sidebar einklappen' : 'Sidebar ausklappen'"
         >
-          <svg 
-            class="w-4 h-4 transition-transform duration-300 ease-in-out" 
+          <svg
+            class="w-4 h-4 transition-transform duration-300 ease-in-out"
             :class="{ 'rotate-180': isOpen }"
-            fill="none" 
-            stroke="currentColor" 
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
       </div>
@@ -87,23 +88,21 @@ const isItemActive = (to: string) => {
 
     <!-- Navigation -->
     <nav class="flex-1 p-4 space-y-8 overflow-y-auto scrollbar-hide">
-      <div 
-        v-for="group in navGroups.filter(g => !g.show || g.show)" 
+      <div
+        v-for="group in navGroups.filter((g) => !g.show || g.show)"
         :key="group.title"
         class="space-y-3"
       >
         <!-- Group Title -->
-        <h3 
+        <h3
           :class="[
             'px-3 text-[10px] uppercase tracking-wider font-semibold text-neutral-400/80 transition-all duration-300 ease-in-out overflow-hidden',
-            isOpen 
-              ? 'opacity-100 h-auto' 
-              : 'opacity-0 h-0'
+            isOpen ? 'opacity-100 h-auto' : 'opacity-0 h-0',
           ]"
         >
           {{ group.title }}
         </h3>
-        
+
         <!-- Group Items -->
         <div class="space-y-2">
           <UiSidebarItem
@@ -122,17 +121,17 @@ const isItemActive = (to: string) => {
     <!-- User Section (Bottom) -->
     <div class="p-4 border-t border-[var(--winered-medium)]">
       <div v-if="user" class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-[var(--winered-light)]/20 flex items-center justify-center flex-shrink-0">
+        <div
+          class="w-10 h-10 rounded-full bg-[var(--winered-light)]/20 flex items-center justify-center flex-shrink-0"
+        >
           <span class="text-sm font-semibold text-[var(--winered-light)]">
             {{ user.name.charAt(0).toUpperCase() }}
           </span>
         </div>
-        <div 
+        <div
           :class="[
             'transition-all duration-300 ease-in-out overflow-hidden',
-            isOpen 
-              ? 'opacity-100 w-auto' 
-              : 'opacity-0 w-0'
+            isOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0',
           ]"
         >
           <p class="text-sm font-medium text-white truncate">{{ user.name }}</p>
@@ -143,20 +142,32 @@ const isItemActive = (to: string) => {
   </aside>
 
   <!-- Mobile Drawer -->
-  <aside 
+  <aside
     v-if="isMobileOpen"
     :class="[
       'fixed inset-y-0 left-0 z-50 w-64 lg:hidden bg-[var(--winered-dark)] text-[var(--winered-text)] transform transition-transform duration-300',
-      'translate-x-0'
+      'translate-x-0',
     ]"
   >
     <!-- Mobile Header -->
     <div class="p-6 border-b border-[var(--winered-medium)]">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-[var(--winered-light)] flex items-center justify-center shadow-lg">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          <div
+            class="w-10 h-10 rounded-xl bg-[var(--winered-light)] flex items-center justify-center shadow-lg"
+          >
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+              />
             </svg>
           </div>
           <div>
@@ -168,8 +179,18 @@ const isItemActive = (to: string) => {
           @click="closeMobile"
           class="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:--winered-dark focus:outline-none"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -177,16 +198,18 @@ const isItemActive = (to: string) => {
 
     <!-- Mobile Navigation -->
     <nav class="flex-1 p-4 space-y-6 overflow-y-auto scrollbar-hide">
-      <div 
-        v-for="group in navGroups.filter(g => !g.show || g.show)" 
+      <div
+        v-for="group in navGroups.filter((g) => !g.show || g.show)"
         :key="group.title"
         class="space-y-2"
       >
         <!-- Group Title -->
-        <h3 class="px-3 text-[10px] uppercase tracking-wide text-neutral-400/80">
+        <h3
+          class="px-3 text-[10px] uppercase tracking-wide text-neutral-400/80"
+        >
           {{ group.title }}
         </h3>
-        
+
         <!-- Group Items -->
         <div class="space-y-1">
           <UiSidebarItem
@@ -205,7 +228,9 @@ const isItemActive = (to: string) => {
     <!-- Mobile User Section -->
     <div class="p-4 border-t border-[var(--winered-medium)]">
       <div v-if="user" class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-[var(--winered-light)]/20 flex items-center justify-center">
+        <div
+          class="w-10 h-10 rounded-full bg-[var(--winered-light)]/20 flex items-center justify-center"
+        >
           <span class="text-sm font-semibold text-[var(--winered-light)]">
             {{ user.name.charAt(0).toUpperCase() }}
           </span>
@@ -219,7 +244,7 @@ const isItemActive = (to: string) => {
   </aside>
 
   <!-- Mobile Backdrop -->
-  <div 
+  <div
     v-if="isMobileOpen"
     @click="closeMobile"
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
@@ -229,12 +254,12 @@ const isItemActive = (to: string) => {
 <style scoped>
 /* Hide scrollbar but keep functionality */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
+  display: none; /* Safari and Chrome */
 }
 
 /* Smooth scrolling */
