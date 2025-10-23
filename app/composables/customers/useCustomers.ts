@@ -12,6 +12,7 @@ export interface Contact {
     xing?: string;
     facebook?: string;
   };
+  notizen?: string;
 }
 
 export interface Customer {
@@ -38,8 +39,7 @@ export interface Customer {
   state: string;
   foundingDate: string;
   description: string;
-  primaryContact: Contact;
-  secondaryContact?: Contact;
+  contacts: Contact[]; // Changed from primaryContact/secondaryContact to array
   conversationHook?: string;
   researchResult?: string;
 }
@@ -55,10 +55,7 @@ export function useCustomers() {
 
   const getContactCount = (customer: Customer | null) => {
     if (!customer) return 0;
-    let count = 0;
-    if (customer.primaryContact) count++;
-    if (customer.secondaryContact) count++;
-    return count;
+    return customer.contacts?.length || 0;
   };
 
   return {

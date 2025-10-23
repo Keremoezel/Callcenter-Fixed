@@ -41,11 +41,7 @@
               >
                 Abbrechen
               </UButton>
-              <UButton
-                size="sm"
-                color="primary"
-                @click="saveCompanyInfo"
-              >
+              <UButton size="sm" color="primary" @click="saveCompanyInfo">
                 Speichern
               </UButton>
             </div>
@@ -84,11 +80,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.industry }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.industry"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.industry" size="sm" />
             </div>
 
             <!-- MitarbeiterAnzahl -->
@@ -110,11 +102,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.website }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.website"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.website" size="sm" />
             </div>
 
             <!-- TelefonNummer -->
@@ -136,11 +124,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.email }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.email"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.email" size="sm" />
             </div>
 
             <!-- Öffnungszeiten -->
@@ -188,11 +172,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.postalCode }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.postalCode"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.postalCode" size="sm" />
             </div>
 
             <!-- Ort -->
@@ -201,11 +181,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.city }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.city"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.city" size="sm" />
             </div>
 
             <!-- Bundesland -->
@@ -214,11 +190,7 @@
               <p v-if="!isEditingCompanyInfo" class="font-bold text-gray-800">
                 {{ selectedCustomer.state }}
               </p>
-              <UInput
-                v-else
-                v-model="editedCompanyInfo.state"
-                size="sm"
-              />
+              <UInput v-else v-model="editedCompanyInfo.state" size="sm" />
             </div>
 
             <!-- Gründung -->
@@ -324,7 +296,7 @@
             </h3>
             <div class="flex items-center space-x-3">
               <span v-if="!isEditingContacts" class="text-sm text-gray-500"
-                >Primär({{ selectedCustomer.primaryContact.firstName }}) ↓</span
+                >Primär({{ primaryContact?.firstName }}) ↓</span
               >
               <UButton
                 v-if="!isEditingContacts"
@@ -345,43 +317,52 @@
                 >
                   Abbrechen
                 </UButton>
-                <UButton
-                  size="sm"
-                  color="primary"
-                  @click="saveContacts"
-                >
+                <UButton size="sm" color="primary" @click="saveContacts">
                   Speichern
                 </UButton>
               </div>
             </div>
           </div>
 
-          <!-- VIEW MODE: Display contacts as before -->
+          <!-- VIEW MODE: Display ALL contacts -->
           <template v-if="!isEditingContacts">
-            <!-- Primary Contact -->
-            <div class="bg-blue-50 border border-gray-200 rounded-lg mb-3 p-4">
+            <div
+              v-for="(contact, index) in selectedCustomer.contacts"
+              :key="index"
+              :class="[
+                'border border-gray-200 rounded-lg mb-3 p-4',
+                contact.isPrimary ? 'bg-blue-50' : 'bg-white'
+              ]"
+            >
               <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center space-x-2">
                   <span
-                    class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
-                    >✓ Primär</span
+                    :class="[
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs',
+                      contact.isPrimary
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600'
+                    ]"
                   >
+                    {{ contact.isPrimary ? '✓ Primär' : `Kontakt ${index + 1}` }}
+                  </span>
                   <h4 class="font-bold text-gray-800">
-                    {{ selectedCustomer.primaryContact.firstName }}
+                    {{ contact.firstName }}
                   </h4>
                 </div>
                 <div class="flex space-x-2">
                   <UButton
                     size="sm"
-                    color="primary"
-                    @click="callContact(selectedCustomer.primaryContact)"
+                    :color="contact.isPrimary ? 'primary' : 'neutral'"
+                    :variant="contact.isPrimary ? 'solid' : 'outline'"
+                    @click="callContact(contact)"
                     >📞 Anrufen</UButton
                   >
                   <UButton
                     size="sm"
-                    color="primary"
+                    :color="contact.isPrimary ? 'primary' : 'neutral'"
                     variant="outline"
-                    @click="emailContact(selectedCustomer.primaryContact)"
+                    @click="emailContact(contact)"
                     >✉️ Email</UButton
                   >
                 </div>
@@ -391,25 +372,25 @@
                 <div>
                   <label class="text-xs text-gray-500">Vorname</label>
                   <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.primaryContact.firstName }}
+                    {{ contact.firstName }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">Mail</label>
                   <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.primaryContact.email }}
+                    {{ contact.email }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">Telefonnummer</label>
                   <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.primaryContact.phoneNumber }}
+                    {{ contact.phoneNumber }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">Position</label>
                   <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.primaryContact.position || "-" }}
+                    {{ contact.position || "-" }}
                   </p>
                 </div>
               </div>
@@ -420,130 +401,54 @@
                 <div>
                   <label class="text-xs text-gray-500">Geburtsdatum</label>
                   <p class="text-xs text-gray-600">
-                    {{ selectedCustomer.primaryContact.birthDate || "-" }}
+                    {{ contact.birthDate || "-" }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">LinkedIn</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{ selectedCustomer.primaryContact.social?.linkedin || "-" }}
+                  <p
+                    class="text-xs text-blue-600 hover:underline cursor-pointer"
+                  >
+                    {{ contact.social?.linkedin || "-" }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">Xing</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{ selectedCustomer.primaryContact.social?.xing || "-" }}
+                  <p
+                    class="text-xs text-blue-600 hover:underline cursor-pointer"
+                  >
+                    {{ contact.social?.xing || "-" }}
                   </p>
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">Facebook</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{ selectedCustomer.primaryContact.social?.facebook || "-" }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Secondary Contact -->
-            <div class="bg-white border border-gray-200 rounded-lg mb-3 p-4">
-              <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center space-x-2">
-                  <span
-                    class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600"
-                    >- Sekundär</span
+                  <p
+                    class="text-xs text-blue-600 hover:underline cursor-pointer"
                   >
-                  <h4 class="font-bold text-gray-800">
-                    {{ selectedCustomer.secondaryContact?.firstName || "Anna Schmidt" }}
-                  </h4>
-                </div>
-                <div class="flex space-x-2">
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="outline"
-                    @click="callContact('secondary')"
-                    >📞 Anrufen</UButton
-                  >
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="outline"
-                    @click="emailContact('secondary')"
-                    >✉️ Email</UButton
-                  >
-                </div>
-              </div>
-
-              <div class="grid grid-cols-4 gap-4">
-                <div>
-                  <label class="text-xs text-gray-500">Vorname</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.secondaryContact?.firstName || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Mail</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.secondaryContact?.email || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Telefonnummer</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.secondaryContact?.phoneNumber || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Position</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ selectedCustomer.secondaryContact?.position || "-" }}
+                    {{ contact.social?.facebook || "-" }}
                   </p>
                 </div>
               </div>
 
-              <div
-                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
-              >
-                <div>
-                  <label class="text-xs text-gray-500">Geburtsdatum</label>
-                  <p class="text-xs text-gray-600">
-                    {{ selectedCustomer.secondaryContact?.birthDate || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">LinkedIn</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{
-                      selectedCustomer.secondaryContact?.social?.linkedin || "-"
-                    }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Xing</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{ selectedCustomer.secondaryContact?.social?.xing || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Facebook</label>
-                  <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-                    {{
-                      selectedCustomer.secondaryContact?.social?.facebook || "-"
-                    }}
-                  </p>
-                </div>
+              <!-- Notizen Section (Full Width) -->
+              <div class="mt-3 pt-3 border-t border-gray-200">
+                <label class="text-xs text-gray-500">Notizen</label>
+                <p class="text-sm text-gray-700 mt-1">
+                  {{ contact.notizen || "-" }}
+                </p>
               </div>
             </div>
           </template>
 
-          <!-- EDIT MODE: Loop through editable contacts -->
+          <!-- EDIT MODE: Loop through all editable contacts -->
           <template v-else>
+            <!-- Loop through all contacts -->
             <div
               v-for="(contact, index) in editedContacts"
               :key="index"
               :class="[
                 'border border-gray-200 rounded-lg mb-3 p-4',
-                contact.isPrimary ? 'bg-blue-50' : 'bg-white'
+                contact.isPrimary ? 'bg-blue-50' : 'bg-white',
               ]"
             >
               <div class="flex justify-between items-center mb-3">
@@ -554,10 +459,10 @@
                       'inline-flex items-center px-2 py-1 rounded-full text-xs',
                       contact.isPrimary
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
+                        : 'bg-gray-100 text-gray-600',
                     ]"
                   >
-                    {{ contact.isPrimary ? '✓ Primär' : '- Sekundär' }}
+                    {{ contact.isPrimary ? "✓ Primär" : "- Sekundär" }}
                   </span>
 
                   <!-- Set as Primary Button (only show for non-primary contacts) -->
@@ -572,9 +477,21 @@
                   </UButton>
 
                   <h4 class="font-bold text-gray-800">
-                    {{ contact.firstName }}
+                    {{ contact.firstName || "Neuer Kontakt" }}
                   </h4>
                 </div>
+
+                <!-- Remove Contact Button (only for non-primary) -->
+                <UButton
+                  v-if="!contact.isPrimary && editedContacts.length > 1"
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  icon="i-heroicons-trash"
+                  @click="removeContact(index)"
+                >
+                  Löschen
+                </UButton>
               </div>
 
               <!-- Contact Fields (Editable) -->
@@ -584,6 +501,7 @@
                   <UInput
                     v-model="contact.firstName"
                     size="sm"
+                    placeholder="Vorname eingeben"
                   />
                 </div>
                 <div>
@@ -591,6 +509,7 @@
                   <UInput
                     v-model="contact.email"
                     size="sm"
+                    placeholder="E-Mail eingeben"
                   />
                 </div>
                 <div>
@@ -598,6 +517,7 @@
                   <UInput
                     v-model="contact.phoneNumber"
                     size="sm"
+                    placeholder="Telefonnummer eingeben"
                   />
                 </div>
                 <div>
@@ -605,25 +525,25 @@
                   <UInput
                     v-model="contact.position"
                     size="sm"
+                    placeholder="Position eingeben"
                   />
                 </div>
               </div>
 
               <!-- Social Media Fields (Editable) -->
-              <div class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200">
+              <div
+                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
+              >
                 <div>
                   <label class="text-xs text-gray-500">Geburtsdatum</label>
-                  <UInput
-                    v-model="contact.birthDate"
-                    size="sm"
-                    type="date"
-                  />
+                  <UInput v-model="contact.birthDate" size="sm" type="date" />
                 </div>
                 <div>
                   <label class="text-xs text-gray-500">LinkedIn</label>
                   <UInput
                     v-model="contact.social.linkedin"
                     size="sm"
+                    placeholder="LinkedIn URL"
                   />
                 </div>
                 <div>
@@ -631,6 +551,7 @@
                   <UInput
                     v-model="contact.social.xing"
                     size="sm"
+                    placeholder="Xing URL"
                   />
                 </div>
                 <div>
@@ -638,9 +559,33 @@
                   <UInput
                     v-model="contact.social.facebook"
                     size="sm"
+                    placeholder="Facebook URL"
                   />
                 </div>
               </div>
+
+              <!-- Notizen Section (Full Width, Editable) -->
+              <div class="mt-3 pt-3 border-t border-gray-200">
+                <label class="text-xs text-gray-500 block mb-1">Notizen</label>
+                <UTextarea
+                  v-model="contact.notizen"
+                  :rows="3"
+                  placeholder="Notizen zu diesem Kontakt..."
+                />
+              </div>
+            </div>
+
+            <!-- Add Contact Button -->
+            <div class="mt-4">
+              <UButton
+                color="primary"
+                variant="outline"
+                icon="i-heroicons-plus"
+                @click="addContact"
+                block
+              >
+                Neuen Kontakt hinzufügen
+              </UButton>
             </div>
           </template>
         </div>
@@ -762,6 +707,21 @@ const cancelEditingCompanyInfo = () => {
 };
 
 // ============================================
+// COMPUTED PROPERTIES FOR CONTACTS
+// ============================================
+// Get the primary contact from the contacts array
+const primaryContact = computed(() => {
+  if (!props.selectedCustomer?.contacts) return null;
+  return props.selectedCustomer.contacts.find((c) => c.isPrimary) || null;
+});
+
+// Get the first secondary contact for view mode (only show one)
+const firstSecondaryContact = computed(() => {
+  if (!props.selectedCustomer?.contacts) return null;
+  return props.selectedCustomer.contacts.find((c) => !c.isPrimary) || null;
+});
+
+// ============================================
 // CONTACTS EDITING
 // ============================================
 // Store contacts as an array for easy reordering
@@ -769,35 +729,25 @@ const editedContacts = ref<any[]>([]);
 
 // When user clicks the pen icon to edit contacts
 const startEditingContacts = () => {
-  if (!props.selectedCustomer) return;
+  if (!props.selectedCustomer?.contacts) return;
 
-  // Build contacts array with primary contact first
-  editedContacts.value = [
-    {
-      ...props.selectedCustomer.primaryContact,
-      isPrimary: true,
-      // Ensure social object exists
-      social: props.selectedCustomer.primaryContact.social || {
-        linkedin: "",
-        xing: "",
-        facebook: "",
-      },
+  // Copy all contacts to editing array
+  editedContacts.value = props.selectedCustomer.contacts.map((contact) => ({
+    ...contact,
+    // Ensure social object exists
+    social: contact.social || {
+      linkedin: "",
+      xing: "",
+      facebook: "",
     },
-  ];
+  }));
 
-  // Add secondary contact if it exists
-  if (props.selectedCustomer.secondaryContact) {
-    editedContacts.value.push({
-      ...props.selectedCustomer.secondaryContact,
-      isPrimary: false,
-      // Ensure social object exists
-      social: props.selectedCustomer.secondaryContact.social || {
-        linkedin: "",
-        xing: "",
-        facebook: "",
-      },
-    });
-  }
+  // Sort: primary first, then all others
+  editedContacts.value.sort((a, b) => {
+    if (a.isPrimary) return -1;
+    if (b.isPrimary) return 1;
+    return 0;
+  });
 
   // Enable edit mode
   isEditingContacts.value = true;
@@ -818,8 +768,56 @@ const setPrimaryContact = (index: number) => {
   editedContacts.value.unshift(primaryContact);
 };
 
+// Add a new contact
+const addContact = () => {
+  const newContact = {
+    isPrimary: false,
+    firstName: "",
+    email: "",
+    phoneNumber: "",
+    position: "",
+    birthDate: "",
+    social: {
+      linkedin: "",
+      xing: "",
+      facebook: "",
+    },
+    notizen: "",
+  };
+
+  // Add to end of array
+  editedContacts.value.push(newContact);
+};
+
+// Remove a contact by index
+const removeContact = (index: number) => {
+  // Don't allow removing if it's the only contact
+  if (editedContacts.value.length <= 1) {
+    alert("Ein Unternehmen muss mindestens einen Kontakt haben.");
+    return;
+  }
+
+  // Don't allow removing primary contact directly
+  if (editedContacts.value[index].isPrimary) {
+    alert(
+      "Der Primärkontakt kann nicht gelöscht werden. Bitte markieren Sie zuerst einen anderen Kontakt als Primär."
+    );
+    return;
+  }
+
+  // Remove the contact
+  editedContacts.value.splice(index, 1);
+};
+
 // When user clicks save button for contacts
 const saveContacts = () => {
+  // Validate: must have at least one primary contact
+  const hasPrimary = editedContacts.value.some((c) => c.isPrimary);
+  if (!hasPrimary) {
+    alert("Bitte markieren Sie mindestens einen Kontakt als Primär.");
+    return;
+  }
+
   // TODO: Here you would emit an event or call an API to save the changes
   console.log("Saving contacts:", editedContacts.value);
 
