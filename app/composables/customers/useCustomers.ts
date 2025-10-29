@@ -39,7 +39,7 @@ export interface Customer {
   state: string;
   foundingDate: string;
   description: string;
-  contacts: Contact[]; // Changed from primaryContact/secondaryContact to array
+  contacts: Contact[];
   conversationHook?: string;
   researchResult?: string;
 }

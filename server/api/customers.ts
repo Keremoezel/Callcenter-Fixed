@@ -1,247 +1,91 @@
+import { useDrizzle } from "../utils/drizzle";
+
+//Datenbank abfrage
 export default eventHandler(async () => {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  return [
-    {
-      id: 1,
-      companyName: "Muster GmbH",
-      project: "Projekt",
-      status: "Hinzugefügt Am",
-      assignedAgentId: 101,
-      assignedAgentName: "Agent Max",
-      assignedTeamId: 11,
-      importedByRole: "Teamlead",
-      importedByUserId: 501,
-      companyForm: "GmbH",
-      industry: "IT-Services",
-      employeeCount: "250",
-      website: "www.muster.de",
-      phoneNumber: "+49 123 456789",
-      email: "info@muster.de",
-      openingHours: "Mo-Fr 9-17",
-      revenueSize: "10-50 Mio",
-      streetAddress: "Musterstr. 123",
-      postalCode: "12345",
-      city: "Berlin",
-      state: "Berlin",
-      foundingDate: "1995",
-      description: "Führender IT-Dienstleister",
-      contacts: [
-        {
-          isPrimary: true,
-          firstName: "Max Muster",
-          email: "max.muster@muster.de",
-          phoneNumber: "+49 123 456789",
-          position: "Geschäftsführer",
-          birthDate: "15.03.1985",
-          social: {
-            linkedin: "linkedin.com/in/maxmuster",
-            xing: "xing.com/profile/max_muster",
-            facebook: "facebook.com/maxmuster",
+  const db = useDrizzle();
+
+  const allCompaniesData = await db.query.companies.findMany({
+    // 1. Firmen nach Erstellungsdatum (neueste zuerst) sortieren
+    orderBy: (companies, { desc }) => [desc(companies.createdAt)],
+
+    with: {
+      // 2. 'contacts'-Beziehung laden (im Schema definiert)
+      contacts: {
+        // Kontakte sortieren, sodass 'isPrimary' (Primärkontakt) zuerst kommt
+        orderBy: (contacts, { desc }) => [desc(contacts.isPrimary)],
+      },
+      // 3. 'conversationNotes'-Beziehung laden
+      conversationNotes: true,
+
+      // 4. 'assignments'-Beziehung laden
+      assignments: {
+        orderBy: (assignments, { desc }) => [desc(assignments.assignedAt)],
+        limit: 1,
+
+        // 5. Und die verschachtelte 'agent' (Benutzer)-Beziehung innerhalb der Zuweisung laden
+        with: {
+          agent: {
+            columns: {
+              name: true,
+            },
           },
-          notizen:
-            "Sehr kooperativ, interessiert an neuen Technologien. Bevorzugt Meetings am Vormittag.",
         },
-        {
-          isPrimary: false,
-          firstName: "Anna Schmidt",
-          email: "anna.schmidt@muster.de",
-          phoneNumber: "+49 123 456790",
-          position: "Einkaufsleiter",
-          birthDate: "22.07.1978",
-          social: {
-            linkedin: "linkedin.com/in/annaschm",
-            xing: "xing.com/profile/anna_schmidt",
-            facebook: "facebook.com/annaschm",
-          },
-          notizen: "Entscheidungsträger für Einkauf. Hat Budget-Verantwortung.",
-        },
-        {
-          isPrimary: false,
-          firstName: "Peter Mueller",
-          email: "peter.mueller@muster.de",
-          phoneNumber: "+49 123 456791",
-          position: "IT-Leiter",
-          birthDate: "10.09.1980",
-          social: {
-            linkedin: "linkedin.com/in/petermueller",
-            xing: "xing.com/profile/peter_mueller",
-            facebook: "facebook.com/petermueller",
-          },
-          notizen: "Technischer Ansprechpartner für alle IT-Projekte.",
-        },
-      ],
+      },
     },
-    {
-      id: 2,
-      companyName: "Test GmbH",
-      project: "Projekt",
-      status: "Hinzugefügt Am",
-      assignedAgentId: 102,
-      assignedAgentName: "Agent Anna",
-      assignedTeamId: 11,
-      importedByRole: "Admin",
-      importedByUserId: 1,
-      companyForm: "GmbH",
-      industry: "Handel",
-      employeeCount: "150",
-      website: "www.test.de",
-      phoneNumber: "+49 987 654321",
-      email: "info@test.de",
-      openingHours: "Mo-Fr 8-18",
-      revenueSize: "5-10 Mio",
-      streetAddress: "Teststr. 456",
-      postalCode: "54321",
-      city: "Hamburg",
-      state: "Hamburg",
-      foundingDate: "2001",
-      description: "Handelsunternehmen",
-      contacts: [
-        {
-          isPrimary: true,
-          firstName: "Anna Test",
-          email: "anna.test@test.de",
-          phoneNumber: "+49 987 654321",
-          position: "Vertriebsleiter",
-          birthDate: "02.01.1987",
-          social: {
-            linkedin: "linkedin.com/in/annatest",
-            xing: "xing.com/profile/anna_test",
-            facebook: "facebook.com/annatest",
-          },
+  });
+
+  const formattedResults = allCompaniesData.map((company) => {
+    // Die Daten kommen von Drizzle bereits gruppiert und verschachtelt an
+    const assignment = company.assignments[0]; // Dank 'limit: 1'
+    const note = company.conversationNotes; // 1-zu-1-Beziehung, kommt als Objekt
+
+    return {
+      id: company.id,
+      companyName: company.name,
+      project: company.project || "",
+
+      // 'status'- und 'agent'-Informationen wurden in der Hauptabfrage mitgeladen
+      status: assignment?.status || "Hinzugefügt Am",
+      assignedAgentId: assignment?.agentId || null,
+      assignedAgentName: assignment?.agent?.name || null, // Kam aus der Hauptabfrage
+      assignedTeamId: assignment?.teamId || null,
+
+      companyForm: company.legalForm || "",
+      industry: company.industry || "",
+      employeeCount: company.employeeCount?.toString() || "0",
+      website: company.website || "",
+      phoneNumber: company.phone || "",
+      email: company.email || "",
+      openingHours: company.openingHours || "",
+      revenueSize: company.revenueSize || "",
+      streetAddress: company.street || "",
+      postalCode: company.postalCode || "",
+      city: company.city || "",
+      state: company.state || "",
+      foundingDate: company.foundingDate || "",
+      description: company.description || "",
+
+      // Notizen wurden ebenfalls in der Hauptabfrage geladen
+      conversationHook: note?.conversationHook || "",
+      researchResult: note?.researchResult || "",
+
+      // Kontakte sind bereits als 'contacts'-Array vorhanden und können direkt gemappt werden
+      contacts: company.contacts.map((contact) => ({
+        isPrimary: contact.isPrimary,
+        firstName: contact.firstName,
+        lastName: contact.lastName || "",
+        email: contact.email || "",
+        phoneNumber: contact.phone || "",
+        position: contact.position || "",
+        birthDate: contact.birthDate || "",
+        social: {
+          linkedin: contact.linkedin || "",
+          xing: contact.xing || "",
+          facebook: contact.facebook || "",
         },
-        {
-          isPrimary: false,
-          firstName: "Thomas Test",
-          email: "thomas.test@test.de",
-          phoneNumber: "+49 987 654322",
-          position: "Marketing Manager",
-          birthDate: "09.09.1980",
-          social: {
-            linkedin: "linkedin.com/in/thomastest",
-            xing: "xing.com/profile/thomas_test",
-            facebook: "facebook.com/thomastest",
-          },
-        },
-      ],
-    },
-    {
-      id: 3,
-      companyName: "Aufgabe GmbH",
-      project: "Projekt",
-      status: "Hinzugefügt Am",
-      assignedAgentId: null,
-      assignedAgentName: null,
-      assignedTeamId: 12,
-      importedByRole: "Teamlead",
-      importedByUserId: 502,
-      companyForm: "GmbH",
-      industry: "Consulting",
-      employeeCount: "75",
-      website: "www.aufgabe.de",
-      phoneNumber: "+49 555 123456",
-      email: "info@aufgabe.de",
-      openingHours: "Mo-Fr 9-18",
-      revenueSize: "1-5 Mio",
-      streetAddress: "Aufgabenstr. 789",
-      postalCode: "67890",
-      city: "München",
-      state: "Bayern",
-      foundingDate: "2010",
-      description: "Beratungsunternehmen",
-      contacts: [
-        {
-          isPrimary: true,
-          firstName: "Thomas Aufgabe",
-          email: "thomas.aufgabe@aufgabe.de",
-          phoneNumber: "+49 555 123456",
-          position: "Senior Berater",
-          birthDate: "18.05.1982",
-          social: {
-            linkedin: "linkedin.com/in/thomasaufgabe",
-            xing: "xing.com/profile/thomas_aufgabe",
-            facebook: "facebook.com/thomas.aufgabe",
-          },
-        },
-        {
-          isPrimary: false,
-          firstName: "Maria Aufgabe",
-          email: "maria.aufgabe@aufgabe.de",
-          phoneNumber: "+49 555 123457",
-          position: "Projektmanager",
-          birthDate: "27.11.1990",
-          social: {
-            linkedin: "linkedin.com/in/mariaaufgabe",
-            xing: "xing.com/profile/maria_aufgabe",
-            facebook: "facebook.com/maria.aufgabe",
-          },
-        },
-        {
-          isPrimary: false,
-          firstName: "Klaus Berger",
-          email: "klaus.berger@aufgabe.de",
-          phoneNumber: "+49 555 123458",
-          position: "Personalleiter",
-          birthDate: "12.03.1975",
-          social: {
-            linkedin: "linkedin.com/in/klausberger",
-            xing: "xing.com/profile/klaus_berger",
-            facebook: "facebook.com/klausberger",
-          },
-        },
-        {
-          isPrimary: false,
-          firstName: "Julia Fischer",
-          email: "julia.fischer@aufgabe.de",
-          phoneNumber: "+49 555 123459",
-          position: "Finanzcontroller",
-          birthDate: "05.08.1988",
-          social: {
-            linkedin: "linkedin.com/in/juliafischer",
-            xing: "xing.com/profile/julia_fischer",
-            facebook: "facebook.com/juliafischer",
-          },
-        },
-      ],
-    },
-    {
-      id: 4,
-      companyName: "Perfekt GmbH",
-      project: "test Projekt",
-      status: "Hinzugefügt Am",
-      assignedAgentId: 103,
-      assignedAgentName: "Agent Tom",
-      assignedTeamId: null,
-      importedByRole: "Admin",
-      importedByUserId: 1,
-      companyForm: "GmbH",
-      industry: "Software",
-      employeeCount: "500",
-      website: "www.perfekt.de",
-      phoneNumber: "+49 777 987654",
-      email: "info@perfekt.de",
-      openingHours: "Mo-Fr 8-17",
-      revenueSize: "50-100 Mio",
-      streetAddress: "Perfektstr. 321",
-      postalCode: "98765",
-      city: "Frankfurt",
-      state: "Hessen",
-      foundingDate: "1988",
-      description: "Softwareentwicklung",
-      contacts: [
-        {
-          isPrimary: true,
-          firstName: "Sarah Perfekt",
-          email: "sarah.perfekt@perfekt.de",
-          phoneNumber: "+49 777 987654",
-          position: "CTO",
-          birthDate: "30.10.1989",
-          social: {
-            linkedin: "linkedin.com/in/sarahperfekt",
-            xing: "xing.com/profile/sarah_perfekt",
-            facebook: "facebook.com/sarah.perfekt",
-          },
-        },
-      ],
-    },
-  ];
+      })),
+    };
+  });
+
+  return formattedResults;
 });

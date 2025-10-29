@@ -324,256 +324,29 @@
             </div>
           </div>
 
-          <!-- VIEW MODE: Display ALL contacts -->
+          <!-- VIEW MODE: Display ALL contacts using ContactCard component -->
           <template v-if="!isEditingContacts">
-            <div
+            <ContactCard
               v-for="(contact, index) in selectedCustomer.contacts"
               :key="index"
-              :class="[
-                'border border-gray-200 rounded-lg mb-3 p-4',
-                contact.isPrimary ? 'bg-blue-50' : 'bg-white'
-              ]"
-            >
-              <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center space-x-2">
-                  <span
-                    :class="[
-                      'inline-flex items-center px-2 py-1 rounded-full text-xs',
-                      contact.isPrimary
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600'
-                    ]"
-                  >
-                    {{ contact.isPrimary ? '✓ Primär' : `Kontakt ${index + 1}` }}
-                  </span>
-                  <h4 class="font-bold text-gray-800">
-                    {{ contact.firstName }}
-                  </h4>
-                </div>
-                <div class="flex space-x-2">
-                  <UButton
-                    size="sm"
-                    :color="contact.isPrimary ? 'primary' : 'neutral'"
-                    :variant="contact.isPrimary ? 'solid' : 'outline'"
-                    @click="callContact(contact)"
-                    >📞 Anrufen</UButton
-                  >
-                  <UButton
-                    size="sm"
-                    :color="contact.isPrimary ? 'primary' : 'neutral'"
-                    variant="outline"
-                    @click="emailContact(contact)"
-                    >✉️ Email</UButton
-                  >
-                </div>
-              </div>
-
-              <div class="grid grid-cols-4 gap-4">
-                <div>
-                  <label class="text-xs text-gray-500">Vorname</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ contact.firstName }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Mail</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ contact.email }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Telefonnummer</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ contact.phoneNumber }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Position</label>
-                  <p class="font-bold text-sm text-gray-800">
-                    {{ contact.position || "-" }}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
-              >
-                <div>
-                  <label class="text-xs text-gray-500">Geburtsdatum</label>
-                  <p class="text-xs text-gray-600">
-                    {{ contact.birthDate || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">LinkedIn</label>
-                  <p
-                    class="text-xs text-blue-600 hover:underline cursor-pointer"
-                  >
-                    {{ contact.social?.linkedin || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Xing</label>
-                  <p
-                    class="text-xs text-blue-600 hover:underline cursor-pointer"
-                  >
-                    {{ contact.social?.xing || "-" }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Facebook</label>
-                  <p
-                    class="text-xs text-blue-600 hover:underline cursor-pointer"
-                  >
-                    {{ contact.social?.facebook || "-" }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Notizen Section (Full Width) -->
-              <div class="mt-3 pt-3 border-t border-gray-200">
-                <label class="text-xs text-gray-500">Notizen</label>
-                <p class="text-sm text-gray-700 mt-1">
-                  {{ contact.notizen || "-" }}
-                </p>
-              </div>
-            </div>
+              :contact="contact"
+              :index="index"
+              @call="callContact"
+              @email="emailContact"
+            />
           </template>
 
-          <!-- EDIT MODE: Loop through all editable contacts -->
+          <!-- EDIT MODE: Display editable contacts using ContactEditCard component -->
           <template v-else>
-            <!-- Loop through all contacts -->
-            <div
+            <ContactEditCard
               v-for="(contact, index) in editedContacts"
               :key="index"
-              :class="[
-                'border border-gray-200 rounded-lg mb-3 p-4',
-                contact.isPrimary ? 'bg-blue-50' : 'bg-white',
-              ]"
-            >
-              <div class="flex justify-between items-center mb-3">
-                <div class="flex items-center space-x-2">
-                  <!-- Primary/Secondary Badge -->
-                  <span
-                    :class="[
-                      'inline-flex items-center px-2 py-1 rounded-full text-xs',
-                      contact.isPrimary
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-600',
-                    ]"
-                  >
-                    {{ contact.isPrimary ? "✓ Primär" : "- Sekundär" }}
-                  </span>
-
-                  <!-- Set as Primary Button (only show for non-primary contacts) -->
-                  <UButton
-                    v-if="!contact.isPrimary"
-                    size="xs"
-                    color="primary"
-                    variant="soft"
-                    @click="setPrimaryContact(index)"
-                  >
-                    Als Primär markieren
-                  </UButton>
-
-                  <h4 class="font-bold text-gray-800">
-                    {{ contact.firstName || "Neuer Kontakt" }}
-                  </h4>
-                </div>
-
-                <!-- Remove Contact Button (only for non-primary) -->
-                <UButton
-                  v-if="!contact.isPrimary && editedContacts.length > 1"
-                  size="xs"
-                  color="error"
-                  variant="ghost"
-                  icon="i-heroicons-trash"
-                  @click="removeContact(index)"
-                >
-                  Löschen
-                </UButton>
-              </div>
-
-              <!-- Contact Fields (Editable) -->
-              <div class="grid grid-cols-4 gap-4">
-                <div>
-                  <label class="text-xs text-gray-500">Vorname</label>
-                  <UInput
-                    v-model="contact.firstName"
-                    size="sm"
-                    placeholder="Vorname eingeben"
-                  />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Mail</label>
-                  <UInput
-                    v-model="contact.email"
-                    size="sm"
-                    placeholder="E-Mail eingeben"
-                  />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Telefonnummer</label>
-                  <UInput
-                    v-model="contact.phoneNumber"
-                    size="sm"
-                    placeholder="Telefonnummer eingeben"
-                  />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Position</label>
-                  <UInput
-                    v-model="contact.position"
-                    size="sm"
-                    placeholder="Position eingeben"
-                  />
-                </div>
-              </div>
-
-              <!-- Social Media Fields (Editable) -->
-              <div
-                class="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-gray-200"
-              >
-                <div>
-                  <label class="text-xs text-gray-500">Geburtsdatum</label>
-                  <UInput v-model="contact.birthDate" size="sm" type="date" />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">LinkedIn</label>
-                  <UInput
-                    v-model="contact.social.linkedin"
-                    size="sm"
-                    placeholder="LinkedIn URL"
-                  />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Xing</label>
-                  <UInput
-                    v-model="contact.social.xing"
-                    size="sm"
-                    placeholder="Xing URL"
-                  />
-                </div>
-                <div>
-                  <label class="text-xs text-gray-500">Facebook</label>
-                  <UInput
-                    v-model="contact.social.facebook"
-                    size="sm"
-                    placeholder="Facebook URL"
-                  />
-                </div>
-              </div>
-
-              <!-- Notizen Section (Full Width, Editable) -->
-              <div class="mt-3 pt-3 border-t border-gray-200">
-                <label class="text-xs text-gray-500 block mb-1">Notizen</label>
-                <UTextarea
-                  v-model="contact.notizen"
-                  :rows="3"
-                  placeholder="Notizen zu diesem Kontakt..."
-                />
-              </div>
-            </div>
+              :contact="contact"
+              :index="index"
+              :can-delete="editedContacts.length > 1"
+              @set-primary="setPrimaryContact"
+              @remove="removeContact"
+            />
 
             <!-- Add Contact Button -->
             <div class="mt-4">
@@ -609,6 +382,8 @@
 <script setup lang="ts">
 import type { Customer } from "~/composables/customers/useCustomers";
 import { ref, computed, watch } from "vue";
+import ContactCard from "./ContactCard.vue";
+import ContactEditCard from "./ContactEditCard.vue";
 
 // ============================================
 // PROPS & EMITS

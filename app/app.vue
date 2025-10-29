@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useSidebar } from "~/composables/sidebar/useSidebar"
+
 const { isOpen } = useSidebar()
 </script>
 

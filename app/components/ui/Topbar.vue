@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useSidebar } from "~/composables/sidebar/useSidebar";
+import { useAuth } from "~/composables/auth/useAuth";
+
 const { isMobileOpen, toggleMobile } = useSidebar();
 const { user } = useAuth();
 
@@ -62,7 +65,6 @@ const toggleDarkMode = () => {
           >
             Call Center CRM
           </h1>
-          <p class="text-xs text-gray-500 dark:text-red-300">Professional</p>
         </div>
       </div>
 

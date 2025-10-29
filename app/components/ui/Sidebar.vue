@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import UiSidebarItem from "./Sidebaritem.vue";
+import { useAuth } from "~/composables/auth/useAuth";
+import { useSidebar } from "~/composables/sidebar/useSidebar";
 
 const { user, hasRole } = useAuth();
 const { isOpen, isMobileOpen, toggle, closeMobile } = useSidebar();
