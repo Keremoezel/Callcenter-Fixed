@@ -3,6 +3,7 @@ import { ref, type Ref } from "vue";
 export interface Contact {
   isPrimary: boolean;
   firstName: string;
+  lastName?: string;
   email: string;
   phoneNumber: string;
   position?: string;

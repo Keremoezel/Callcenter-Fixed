@@ -1,5 +1,5 @@
 <template>
-  <div class="w-2/3 bg-white p-6">
+  <div class="flex-1 bg-white p-6">
     <div v-if="selectedCustomer">
       <div class="bg-white border border-gray-300 rounded-lg shadow-sm p-6">
         <div class="flex justify-between items-center mb-6">
@@ -324,16 +324,74 @@
             </div>
           </div>
 
-          <!-- VIEW MODE: Display ALL contacts using ContactCard component -->
+          <!-- VIEW MODE: Display contacts with individual collapsible secondary contacts -->
           <template v-if="!isEditingContacts">
+            <!-- Primary Contact - Always Expanded -->
             <ContactCard
-              v-for="(contact, index) in selectedCustomer.contacts"
-              :key="index"
-              :contact="contact"
-              :index="index"
+              v-if="primaryContact"
+              :contact="primaryContact"
+              :index="0"
               @call="callContact"
               @email="emailContact"
             />
+
+            <!-- Secondary Contacts - Each Individually Collapsible -->
+            <div
+              v-for="(contact, index) in secondaryContacts"
+              :key="index"
+              class="mt-4"
+            >
+              <!-- Collapsible Header with Contact Name -->
+              <button
+                @click="toggleSecondaryContact(index)"
+                class="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+              >
+                <div class="flex items-center space-x-3">
+                  <svg
+                    :class="[
+                      'w-5 h-5 text-gray-500 transition-transform',
+                      isSecondaryContactExpanded(index) ? 'rotate-90' : '',
+                    ]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                  <span class="text-sm font-semibold text-gray-800">
+                    {{ contact.firstName }}
+                    {{ contact.lastName || "" }}
+                  </span>
+                  <span
+                    v-if="contact.position"
+                    class="text-xs text-gray-500 italic"
+                  >
+                    ({{ contact.position }})
+                  </span>
+                </div>
+                <span class="text-xs text-gray-400">
+                  Kontakt {{ index + 2 }}
+                </span>
+              </button>
+
+              <!-- Expanded Contact Details -->
+              <div
+                v-if="isSecondaryContactExpanded(index)"
+                class="mt-2 animate-in slide-in-from-top"
+              >
+                <ContactCard
+                  :contact="contact"
+                  :index="index + 1"
+                  @call="callContact"
+                  @email="emailContact"
+                />
+              </div>
+            </div>
           </template>
 
           <!-- EDIT MODE: Display editable contacts using ContactEditCard component -->
@@ -490,11 +548,28 @@ const primaryContact = computed(() => {
   return props.selectedCustomer.contacts.find((c) => c.isPrimary) || null;
 });
 
-// Get the first secondary contact for view mode (only show one)
-const firstSecondaryContact = computed(() => {
-  if (!props.selectedCustomer?.contacts) return null;
-  return props.selectedCustomer.contacts.find((c) => !c.isPrimary) || null;
+// Get all secondary contacts (non-primary)
+const secondaryContacts = computed(() => {
+  if (!props.selectedCustomer?.contacts) return [];
+  return props.selectedCustomer.contacts.filter((c) => !c.isPrimary);
 });
+
+// Track which secondary contacts are expanded (using Set for efficient lookup)
+const expandedSecondaryContacts = ref<Set<number>>(new Set());
+
+// Toggle individual secondary contact expansion
+const toggleSecondaryContact = (index: number) => {
+  if (expandedSecondaryContacts.value.has(index)) {
+    expandedSecondaryContacts.value.delete(index);
+  } else {
+    expandedSecondaryContacts.value.add(index);
+  }
+};
+
+// Check if a secondary contact is expanded
+const isSecondaryContactExpanded = (index: number) => {
+  return expandedSecondaryContacts.value.has(index);
+};
 
 // ============================================
 // CONTACTS EDITING
