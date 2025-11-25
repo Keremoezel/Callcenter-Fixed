@@ -221,6 +221,36 @@
           </div>
         </div>
 
+        <!-- TODO: ANRUF HISTORIE - Backend Logic Needed -->
+        <div class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-bold text-gray-800">
+              📞 Letzter Anruf
+              <span class="ml-2 text-xs text-gray-400 font-normal">(TODO: Backend)</span>
+            </h3>
+            <button
+              class="text-xs text-gray-600 hover:text-gray-800 font-medium"
+              disabled
+            >
+              Alle anzeigen ▼
+            </button>
+          </div>
+
+          <div class="text-sm">
+            <p class="text-gray-900 font-bold mb-1">
+              28.10.2024, 14:30 Uhr <span class="text-gray-500 font-normal">• vor 2 Tagen</span>
+            </p>
+            <p class="text-gray-700 text-sm mb-2">
+              Max Mustermann → David Schmidt • 15 Min •
+              <span class="text-green-600 font-semibold">✓ Erfolgreich</span>
+            </p>
+            <p class="text-gray-600 text-sm italic">
+              "Kunde interessiert an neuem Projekt. Follow-up Meeting
+              vereinbart."
+            </p>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-6 mb-6">
           <div class="bg-white border border-gray-200 rounded-lg p-4">
             <label class="text-sm font-medium text-gray-700 mb-2 block"

@@ -198,7 +198,7 @@ export const assignments = sqliteTable(
     agentId: text("agent_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    status: text("status"), // 'Hinzugefügt|In Bearbeitung|Nicht erreicht|...'
+    status: text("status"),
     assignedAt: integer("assigned_at", { mode: "timestamp" })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
