@@ -70,8 +70,38 @@
 
     <!-- Expanded State - Full List -->
     <div v-else class="p-3">
-      <div class="mb-3">
+      <div class="mb-3 flex justify-between items-center pr-8">
         <h2 class="text-base font-bold text-gray-800">Zugewiesene Kunden</h2>
+        <div>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".xlsx, .xls"
+            class="hidden"
+            @change="handleFileUpload"
+          />
+          <div class="flex gap-2">
+            <UButton
+              size="xs"
+              color="gray"
+              variant="ghost"
+              icon="i-heroicons-document-arrow-down"
+              @click="downloadSample"
+              title="Beispiel-Excel herunterladen"
+            >
+              Vorlage
+            </UButton>
+            <UButton
+              size="xs"
+              color="primary"
+              variant="soft"
+              icon="i-heroicons-arrow-up-tray"
+              @click="triggerFileUpload"
+            >
+              Excel Import
+            </UButton>
+          </div>
+        </div>
       </div>
 
       <div class="space-y-1">
@@ -118,8 +148,9 @@ defineProps<{
   selectedCustomer: Customer | null
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'select', customer: Customer): void
+  (e: 'import', data: any[]): void
 }>()
 
 // Collapse state
@@ -131,6 +162,48 @@ const isButtonHovered = ref(false)
 // Toggle collapse function
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
+}
+
+// ============================================
+// EXCEL IMPORT
+// ============================================
+import { read, utils } from 'xlsx'
+
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const triggerFileUpload = () => {
+  fileInput.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer)
+      const workbook = read(data, { type: 'array' })
+      const firstSheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[firstSheetName]
+      const jsonData = utils.sheet_to_json(worksheet)
+      
+      console.log('Excel Import Raw Data:', jsonData)
+      emit('import', jsonData)
+      
+      // Reset input so same file can be selected again if needed
+      if (fileInput.value) fileInput.value.value = ''
+    } catch (error) {
+      console.error('Error parsing Excel file:', error)
+      alert('Fehler beim Lesen der Excel-Datei.')
+    }
+  }
+  reader.readAsArrayBuffer(file)
+}
+
+const downloadSample = () => {
+  window.location.href = '/api/customers/sample-excel'
 }
 </script>
 

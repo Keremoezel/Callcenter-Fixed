@@ -1,4 +1,6 @@
-import { useDrizzle } from "../utils/drizzle";
+import { useDrizzle } from "../../utils/drizzle";
+
+//unsere main customer api
 
 //Datenbank abfrage
 export default eventHandler(async () => {
@@ -71,6 +73,7 @@ export default eventHandler(async () => {
 
       // Kontakte sind bereits als 'contacts'-Array vorhanden und können direkt gemappt werden
       contacts: company.contacts.map((contact) => ({
+        id: contact.id,
         isPrimary: contact.isPrimary,
         firstName: contact.firstName,
         lastName: contact.lastName || "",
@@ -83,6 +86,7 @@ export default eventHandler(async () => {
           xing: contact.xing || "",
           facebook: contact.facebook || "",
         },
+        notizen: contact.notes || "",
       })),
     };
   });

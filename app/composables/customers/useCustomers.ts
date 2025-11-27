@@ -46,7 +46,7 @@ export interface Customer {
 }
 
 export function useCustomers() {
-  const { data: customers, error, status } = useFetch("/api/customers");
+  const { data: customers, error, status, refresh } = useFetch("/api/customers");
 
   const selectedCustomer: Ref<Customer | null> = ref(null);
 
@@ -66,5 +66,6 @@ export function useCustomers() {
     getContactCount,
     status,
     error,
+    refresh,
   };
 }

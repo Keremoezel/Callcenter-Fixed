@@ -7,6 +7,7 @@
         :customers="customers"
         :selected-customer="selectedCustomer"
         @select="selectCustomer"
+        @import="handleImport"
       />
 
       <!-- DETAIL SECTION - Selected customer (right column) -->
@@ -23,18 +24,9 @@
         :email-contact="emailContact"
         :save-changes="saveChanges"
         :reset-changes="resetChanges"
-        @updateConversation="
-          (v) => {
-            conversationHook.value = v;
-            trackChanges();
-          }
-        "
-        @updateResearch="
-          (v) => {
-            researchResult.value = v;
-            trackChanges();
-          }
-        "
+        @updateConversation="updateConversation"
+        @updateResearch="updateResearch"
+        @refresh="handleRefresh"
       />
     </div>
   </div>
@@ -44,7 +36,7 @@
 import CustomerList from "~/components/customer/CustomerList.vue";
 import CustomerDetail from "~/components/customer/CustomerDetail.vue";
 import { useCustomers } from "~/composables/customers/useCustomers";
-import { useUnsavedChanges } from "~/composables/forms/useUnsavedChanges";
+import { useCustomerNotes } from "~/composables/forms/useCustomerNotes";
 
 // Customer data – managed via composable
 const {
@@ -54,7 +46,20 @@ const {
   getContactCount,
   error,
   status,
+  refresh,
 } = useCustomers();
+
+// Handle data refresh (e.g. after edit)
+const handleRefresh = async () => {
+  await refresh();
+  // Update selected customer with fresh data
+  if (selectedCustomer.value && customers.value) {
+    const updated = customers.value.find(c => c.id === selectedCustomer.value.id);
+    if (updated) {
+      selectedCustomer.value = updated;
+    }
+  }
+};
 
 // Unsaved changes – composable
 const {
@@ -65,7 +70,9 @@ const {
   trackChanges,
   saveChanges,
   resetChanges,
-} = useUnsavedChanges(selectedCustomer);
+} = useCustomerNotes(selectedCustomer, {
+  onSave: handleRefresh
+});
 
 // Start call
 const startCall = () => {
@@ -89,6 +96,45 @@ const sendEmail = () => {
 const emailContact = (contact) => {
   console.log("Email senden an Kontakt:", contact);
   // TODO: Implement contact-specific email functionality
+};
+
+// Update handlers
+const updateConversation = (v) => {
+  conversationHook.value = v;
+  trackChanges();
+};
+
+const updateResearch = (v) => {
+  researchResult.value = v;
+  trackChanges();
+};
+
+// Handle Excel Import
+const handleImport = async (data) => {
+  console.log("Importing data:", data);
+  
+  if (!data || data.length === 0) {
+    alert("Die importierte Datei ist leer.");
+    return;
+  }
+
+  try {
+    const { error } = await useFetch('/api/customers/import', {
+      method: 'POST',
+      body: { customers: data }
+    });
+
+    if (error.value) {
+      console.error("Import error:", error.value);
+      alert("Fehler beim Importieren der Kunden: " + error.value.message);
+    } else {
+      alert(`${data.length} Kunden erfolgreich importiert!`);
+      window.location.reload(); 
+    }
+  } catch (err) {
+    console.error("Unexpected error during import:", err);
+    alert("Ein unerwarteter Fehler ist aufgetreten.");
+  }
 };
 
 // Page leave warning is handled inside the composable

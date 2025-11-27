@@ -167,6 +167,7 @@ export const contacts = sqliteTable("contacts", {
   linkedin: text("linkedin"),
   xing: text("xing"),
   facebook: text("facebook"),
+  notes: text("notes"), // Added notes column
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

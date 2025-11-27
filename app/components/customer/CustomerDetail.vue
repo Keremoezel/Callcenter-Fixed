@@ -251,6 +251,19 @@
           </div>
         </div>
 
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-800">Notizen & Recherche</h3>
+          <UButton
+            v-if="hasUnsavedChanges"
+            size="sm"
+            color="primary"
+            @click="saveChanges"
+            :loading="isSaving"
+          >
+            Speichern
+          </UButton>
+        </div>
+
         <div class="grid grid-cols-2 gap-6 mb-6">
           <div class="bg-white border border-gray-200 rounded-lg p-4">
             <label class="text-sm font-medium text-gray-700 mb-2 block"
@@ -491,9 +504,10 @@ const props = defineProps<{
   resetChanges: () => void;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: "updateConversation", value: string): void;
   (e: "updateResearch", value: string): void;
+  (e: "refresh"): void;
 }>();
 
 // ============================================
@@ -503,7 +517,15 @@ defineEmits<{
 const isEditingCompanyInfo = ref(false);
 
 // Controls whether contacts section is in edit mode
+// Controls whether contacts section is in edit mode
 const isEditingContacts = ref(false);
+
+// Watch for customer changes to reset edit modes
+watch(() => props.selectedCustomer, () => {
+  isEditingCompanyInfo.value = false;
+  isEditingContacts.value = false;
+  editedContacts.value = [];
+});
 
 // ============================================
 // COMPANY INFO EDITING
@@ -555,12 +577,24 @@ const startEditingCompanyInfo = () => {
 };
 
 // When user clicks save button for company info
-const saveCompanyInfo = () => {
-  // TODO: Here you would emit an event or call an API to save the changes
-  console.log("Saving company info:", editedCompanyInfo.value);
+const saveCompanyInfo = async () => {
+  if (!props.selectedCustomer) return;
 
-  // Exit edit mode
-  isEditingCompanyInfo.value = false;
+  try {
+    await $fetch(`/api/customers/${props.selectedCustomer.id}`, {
+      method: 'PUT',
+      body: editedCompanyInfo.value
+    });
+    
+    // Exit edit mode
+    isEditingCompanyInfo.value = false;
+    
+    // Emit refresh to reload data
+    emit('refresh');
+  } catch (error) {
+    console.error("Failed to save company info:", error);
+    alert("Fehler beim Speichern der Unternehmensdaten.");
+  }
 };
 
 // When user clicks cancel button for company info
@@ -690,7 +724,7 @@ const removeContact = (index: number) => {
 };
 
 // When user clicks save button for contacts
-const saveContacts = () => {
+const saveContacts = async () => {
   // Validate: must have at least one primary contact
   const hasPrimary = editedContacts.value.some((c) => c.isPrimary);
   if (!hasPrimary) {
@@ -698,11 +732,25 @@ const saveContacts = () => {
     return;
   }
 
-  // TODO: Here you would emit an event or call an API to save the changes
-  console.log("Saving contacts:", editedContacts.value);
+  if (!props.selectedCustomer) return;
 
-  // Exit edit mode
-  isEditingContacts.value = false;
+  console.log('Saving contacts:', editedContacts.value);
+
+  try {
+    await $fetch(`/api/customers/${props.selectedCustomer.id}/contacts`, {
+      method: 'PUT',
+      body: editedContacts.value
+    });
+
+    // Exit edit mode
+    isEditingContacts.value = false;
+
+    // Emit refresh to reload data
+    emit('refresh');
+  } catch (error) {
+    console.error("Failed to save contacts:", error);
+    alert("Fehler beim Speichern der Kontakte.");
+  }
 };
 
 // When user clicks cancel button for contacts

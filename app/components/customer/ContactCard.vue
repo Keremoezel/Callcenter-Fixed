@@ -79,21 +79,42 @@
       </div>
       <div>
         <label class="text-xs text-gray-500">LinkedIn</label>
-        <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-          {{ contact.social?.linkedin || "-" }}
-        </p>
+        <a
+          v-if="contact.social?.linkedin"
+          :href="contact.social.linkedin"
+          target="_blank"
+          class="text-xs text-blue-600 hover:underline cursor-pointer block truncate"
+          :title="contact.social.linkedin"
+        >
+          {{ contact.social.linkedin }}
+        </a>
+        <p v-else class="text-xs text-gray-400">-</p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Xing</label>
-        <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-          {{ contact.social?.xing || "-" }}
-        </p>
+        <a
+          v-if="contact.social?.xing"
+          :href="contact.social.xing"
+          target="_blank"
+          class="text-xs text-blue-600 hover:underline cursor-pointer block truncate"
+          :title="contact.social.xing"
+        >
+          {{ contact.social.xing }}
+        </a>
+        <p v-else class="text-xs text-gray-400">-</p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Facebook</label>
-        <p class="text-xs text-blue-600 hover:underline cursor-pointer">
-          {{ contact.social?.facebook || "-" }}
-        </p>
+        <a
+          v-if="contact.social?.facebook"
+          :href="contact.social.facebook"
+          target="_blank"
+          class="text-xs text-blue-600 hover:underline cursor-pointer block truncate"
+          :title="contact.social.facebook"
+        >
+          {{ contact.social.facebook }}
+        </a>
+        <p v-else class="text-xs text-gray-400">-</p>
       </div>
     </div>
 
