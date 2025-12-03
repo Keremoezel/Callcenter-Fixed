@@ -26,6 +26,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   assignmentsAsAssigner: many(assignments, { relationName: "assigner" }),
   updatedNotes: many(conversationNotes),
   activities: many(activities),
+  assignedTasks: many(tasks, { relationName: "taskAssignee" }),
+  createdTasks: many(tasks, { relationName: "taskAssigner" }),
 }));
 
 export const teams = sqliteTable("teams", {
@@ -117,6 +119,7 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
   contacts: many(contacts),
   assignments: many(assignments),
   activities: many(activities),
+  tasks: many(tasks),
 }));
 
 export const conversationNotes = sqliteTable("conversation_notes", {
@@ -267,4 +270,45 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   }),
 }));
 
-//task und import tabellen mussen importiert werden
+
+export const tasks = sqliteTable("tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  companyId: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  status: text("status").notNull(), // 'Open', 'In Progress', 'Done'
+  priority: text("priority").notNull(), // 'High', 'Medium', 'Low'
+  dueDate: integer("due_date", { mode: "timestamp" }),
+  followUpDate: integer("follow_up_date", { mode: "timestamp" }),
+  assignedBy: text("assigned_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  assignedTo: text("assigned_to").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  description: text("description"),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [tasks.companyId],
+    references: [companies.id],
+  }),
+  assigner: one(users, {
+    fields: [tasks.assignedBy],
+    references: [users.id],
+    relationName: "taskAssigner",
+  }),
+  assignee: one(users, {
+    fields: [tasks.assignedTo],
+    references: [users.id],
+    relationName: "taskAssignee",
+  }),
+}));
+
