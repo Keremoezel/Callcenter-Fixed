@@ -869,7 +869,7 @@ const toggleCompletedTasksExpanded = () => {
 const activeTasks = computed(() => {
   if (!props.selectedCustomer?.tasks) return [];
   
-  const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+  const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3 };
   
   return props.selectedCustomer.tasks
     .filter(task => task.status !== 'Done')

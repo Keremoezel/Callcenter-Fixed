@@ -83,7 +83,7 @@
           <div class="flex gap-2">
             <UButton
               size="xs"
-              color="gray"
+              color="neutral"
               variant="ghost"
               icon="i-heroicons-document-arrow-down"
               @click="downloadSample"
@@ -186,8 +186,8 @@ const handleFileUpload = async (event: Event) => {
       const data = new Uint8Array(e.target?.result as ArrayBuffer)
       const workbook = read(data, { type: 'array' })
       const firstSheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[firstSheetName]
-      const jsonData = utils.sheet_to_json(worksheet)
+      const worksheet = workbook.Sheets[firstSheetName!]
+      const jsonData = utils.sheet_to_json(worksheet!)
       
       console.log('Excel Import Raw Data:', jsonData)
       emit('import', jsonData)

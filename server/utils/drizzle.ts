@@ -11,7 +11,7 @@ export function useDrizzle(event: H3Event) {
   const db = event.context.cloudflare?.env?.DB
   
   if (!db) {
-    throw new Error("Veritabanı bulunamadı! 'pnpm run dev --remote' ile başlattın mı?")
+    throw new Error("dei datenbank nicht gefunden")
   }
 
   return drizzle(db, { schema })

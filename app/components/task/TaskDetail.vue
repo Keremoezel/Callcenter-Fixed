@@ -183,8 +183,8 @@ watch(() => props.task, (newTask) => {
       companyId: newTask.companyId,
       status: newTask.status,
       priority: newTask.priority,
-      dueDate: newTask.dueDate ? new Date(newTask.dueDate).toISOString().split('T')[0] : "",
-      followUpDate: newTask.followUpDate ? new Date(newTask.followUpDate).toISOString().split('T')[0] : "",
+      dueDate: (newTask.dueDate ? new Date(newTask.dueDate).toISOString().split('T')[0] : "") || "",
+      followUpDate: (newTask.followUpDate ? new Date(newTask.followUpDate).toISOString().split('T')[0] : "") || "",
       assignedTo: newTask.assignedTo || undefined,
       description: newTask.description || "",
     };

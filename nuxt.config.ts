@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // https://nuxt.com/modules
-  modules: ["@nuxthub/core", "@nuxt/eslint", "@nuxt/ui"],
+  modules: ["@nuxt/eslint", "@nuxt/ui"],
   css: ["~/assets/css/main.css"],
 
   // https://devtools.nuxt.com
@@ -26,9 +26,6 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    experimental: {
-      tasks: true,
-    },
     preset: "cloudflare_module",
     cloudflare: {
       deployConfig: true,
@@ -42,8 +39,7 @@ export default defineNuxtConfig({
   future: { compatibilityVersion: 4 },
   compatibilityDate: "2026-01-28",
 
-  // https://hub.nuxt.com/docs/getting-started/installation#options
-  
+
 
   // Development config
   eslint: {
