@@ -1,7 +1,7 @@
 import { useDrizzle } from "../../utils/drizzle";
 
-export default eventHandler(async () => {
-    const db = useDrizzle();
+export default eventHandler(async (event) => {
+    const db = useDrizzle(event);
 
     const tasks = await db.query.tasks.findMany({
         orderBy: (tasks, { desc }) => [desc(tasks.createdAt)],

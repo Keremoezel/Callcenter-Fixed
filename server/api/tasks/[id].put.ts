@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 export default eventHandler(async (event) => {
     const id = getRouterParam(event, "id");
     const body = await readBody(event);
-    const db = useDrizzle();
+    const db = useDrizzle(event);
 
     if (!id) {
         throw createError({ statusCode: 400, message: "Task ID is required" });

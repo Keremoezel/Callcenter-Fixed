@@ -119,7 +119,7 @@ const handleImport = async (data) => {
   }
 
   try {
-    const { error } = await useFetch('/api/customers/import', {
+    const { data: result, error } = await useFetch('/api/customers/import', {
       method: 'POST',
       body: { customers: data }
     });
@@ -128,7 +128,8 @@ const handleImport = async (data) => {
       console.error("Import error:", error.value);
       alert("Fehler beim Importieren der Kunden: " + error.value.message);
     } else {
-      alert(`${data.length} Kunden erfolgreich importiert!`);
+      const successCount = result.value?.success || 0;
+      alert(`${successCount} Kunden erfolgreich importiert!`);
       window.location.reload(); 
     }
   } catch (err) {

@@ -5,7 +5,7 @@ import { useDrizzle } from "../../../utils/drizzle";
 export default eventHandler(async (event) => {
     const companyId = parseInt(getRouterParam(event, 'id') || '0');
     const body = await readBody(event);
-    const db = useDrizzle();
+    const db = useDrizzle(event);
 
     if (!companyId) {
         throw createError({

@@ -3,8 +3,10 @@ import { useDrizzle } from "../../utils/drizzle";
 //unsere main customer api
 
 //Datenbank abfrage
-export default eventHandler(async () => {
-  const db = useDrizzle();
+// 👇 Buraya 'event' parametresini ekledik
+export default eventHandler(async (event) => {
+  // 👇 useDrizzle'a 'event'i gönderdik
+  const db = useDrizzle(event);
 
   const allCompaniesData = await db.query.companies.findMany({
     // 1. Firmen nach Erstellungsdatum (neueste zuerst) sortieren
@@ -27,6 +29,23 @@ export default eventHandler(async () => {
         // 5. Und die verschachtelte 'agent' (Benutzer)-Beziehung innerhalb der Zuweisung laden
         with: {
           agent: {
+            columns: {
+              name: true,
+            },
+          },
+        },
+      },
+
+      // 6. 'tasks'-Beziehung laden (Aufgaben)
+      tasks: {
+        orderBy: (tasks, { asc }) => [asc(tasks.dueDate)],
+        with: {
+          assignee: {
+            columns: {
+              name: true,
+            },
+          },
+          assigner: {
             columns: {
               name: true,
             },
@@ -87,6 +106,23 @@ export default eventHandler(async () => {
           facebook: contact.facebook || "",
         },
         notizen: contact.notes || "",
+      })),
+
+      // Tasks sind ebenfalls als 'tasks'-Array vorhanden und können direkt gemappt werden
+      tasks: company.tasks.map((task) => ({
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        dueDate: task.dueDate,
+        followUpDate: task.followUpDate,
+        assignedToName: task.assignee?.name || null,
+        assignedById: task.assignedBy || null,
+        assignedByName: task.assigner?.name || null,
+        assignedToId: task.assignedTo || null,
+        description: task.description || "",
+        completedAt: task.completedAt,
+        createdAt: task.createdAt,
       })),
     };
   });

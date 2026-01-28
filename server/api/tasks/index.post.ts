@@ -3,7 +3,7 @@ import { tasks } from "../../database/schema";
 
 export default eventHandler(async (event) => {
     const body = await readBody(event);
-    const db = useDrizzle();
+    const db = useDrizzle(event);
 
     // Validate required fields
     if (!body.title || !body.companyId) {

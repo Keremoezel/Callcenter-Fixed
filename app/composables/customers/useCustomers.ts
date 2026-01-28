@@ -1,5 +1,21 @@
 import { ref, type Ref } from "vue";
 
+export interface Task {
+  id: number;
+  title: string;
+  status: string;
+  priority: string;
+  dueDate: Date | null;
+  followUpDate: Date | null;
+  assignedToName: string | null;
+  assignedById: string | null;
+  assignedByName: string | null;
+  assignedToId: string | null;
+  description: string;
+  completedAt: Date | null;
+  createdAt: Date;
+}
+
 export interface Contact {
   isPrimary: boolean;
   firstName: string;
@@ -43,6 +59,7 @@ export interface Customer {
   contacts: Contact[];
   conversationHook?: string;
   researchResult?: string;
+  tasks?: Task[];
 }
 
 export function useCustomers() {

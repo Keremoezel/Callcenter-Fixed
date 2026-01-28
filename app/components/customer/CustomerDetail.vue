@@ -221,6 +221,222 @@
           </div>
         </div>
 
+        <!-- AUFGABEN SECTION - Only visible if customer has tasks -->
+        <div v-if="selectedCustomer.tasks && selectedCustomer.tasks.length > 0">
+          <!-- ACTIVE TASKS - High, Medium, Low priority -->
+          <div
+            v-if="activeTasks.length > 0"
+            class="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
+          >
+            <button
+              @click="toggleActiveTasksExpanded"
+              class="w-full flex items-center justify-between mb-3 hover:bg-gray-50 rounded p-2 transition-colors"
+            >
+              <h3 class="text-base font-bold text-gray-800">
+                📋 Aktive Aufgaben ({{ activeTasks.length }})
+              </h3>
+              <svg
+                :class="[
+                  'w-5 h-5 text-gray-600 transition-transform',
+                  isActiveTasksExpanded ? 'rotate-90' : '',
+                ]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
+            <div v-if="isActiveTasksExpanded" class="overflow-x-auto animate-in slide-in-from-top">
+              <table class="w-full text-sm border-collapse">
+                <thead>
+                  <tr class="border-b border-gray-300">
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Bezeichnung/Kategorie
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Prio
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Kunde
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zu erledigen bis
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zugewiesen von
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Wiedervorlage am
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zu erledigen von
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="task in activeTasks"
+                    :key="task.id"
+                    class="border-b border-gray-200 hover:bg-gray-50"
+                  >
+                    <td class="py-2 px-3 text-gray-900">{{ task.title }}</td>
+                    <td class="py-2 px-3">
+                      <span
+                        :class="{
+                          'text-red-600 font-semibold': task.priority === 'High',
+                          'text-orange-600': task.priority === 'Medium',
+                          'text-gray-600': task.priority === 'Low',
+                        }"
+                      >
+                        {{ task.priority }}
+                      </span>
+                    </td>
+                    <td class="py-2 px-3 text-gray-700">
+                      {{ selectedCustomer.companyName }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-700">
+                      {{ formatTaskDate(task.dueDate) }}
+                    </td>
+                    <td class="py-2 px-3">
+                      <span
+                        :class="{
+                          'text-blue-600': task.status === 'In Progress',
+                          'text-gray-600': task.status === 'Open',
+                        }"
+                      >
+                        {{ task.status }}
+                      </span>
+                    </td>
+                    <td class="py-2 px-3 text-gray-700">
+                      {{ task.assignedByName || "-" }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-700">
+                      {{ formatTaskDate(task.followUpDate) }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-700">
+                      {{ task.assignedToName || "-" }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- COMPLETED TASKS - Erledigt -->
+          <div
+            v-if="completedTasks.length > 0"
+            class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
+          >
+            <button
+              @click="toggleCompletedTasksExpanded"
+              class="w-full flex items-center justify-between mb-3 hover:bg-gray-50 rounded p-2 transition-colors"
+            >
+              <h3 class="text-base font-bold text-gray-800">
+                ✅ Erledigte Aufgaben ({{ completedTasks.length }})
+              </h3>
+              <svg
+                :class="[
+                  'w-5 h-5 text-gray-600 transition-transform',
+                  isCompletedTasksExpanded ? 'rotate-90' : '',
+                ]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
+            <div v-if="isCompletedTasksExpanded" class="overflow-x-auto animate-in slide-in-from-top">
+              <table class="w-full text-sm border-collapse">
+                <thead>
+                  <tr class="border-b border-gray-300">
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Bezeichnung/Kategorie
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Prio
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Kunde
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zu erledigen bis
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Status
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zugewiesen von
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Wiedervorlage am
+                    </th>
+                    <th class="text-left py-2 px-3 font-semibold text-gray-700">
+                      Zu erledigen von
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="task in completedTasks"
+                    :key="task.id"
+                    class="border-b border-gray-200 hover:bg-gray-50"
+                  >
+                    <td class="py-2 px-3 text-gray-700">{{ task.title }}</td>
+                    <td class="py-2 px-3">
+                      <span
+                        :class="{
+                          'text-red-600 font-semibold': task.priority === 'High',
+                          'text-orange-600': task.priority === 'Medium',
+                          'text-gray-600': task.priority === 'Low',
+                        }"
+                      >
+                        {{ task.priority }}
+                      </span>
+                    </td>
+                    <td class="py-2 px-3 text-gray-600">
+                      {{ selectedCustomer.companyName }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-600">
+                      {{ formatTaskDate(task.dueDate) }}
+                    </td>
+                    <td class="py-2 px-3">
+                      <span class="text-green-600 font-semibold">
+                        {{ task.status }}
+                      </span>
+                    </td>
+                    <td class="py-2 px-3 text-gray-600">
+                      {{ task.assignedByName || "-" }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-600">
+                      {{ formatTaskDate(task.followUpDate) }}
+                    </td>
+                    <td class="py-2 px-3 text-gray-600">
+                      {{ task.assignedToName || "-" }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- TODO: ANRUF HISTORIE - Backend Logic Needed -->
         <div class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
           <div class="flex items-center justify-between mb-3">
@@ -636,6 +852,41 @@ const isSecondaryContactExpanded = (index: number) => {
 };
 
 // ============================================
+// TASKS EXPANSION & FILTERING
+// ============================================
+const isActiveTasksExpanded = ref(false);
+const isCompletedTasksExpanded = ref(false);
+
+const toggleActiveTasksExpanded = () => {
+  isActiveTasksExpanded.value = !isActiveTasksExpanded.value;
+};
+
+const toggleCompletedTasksExpanded = () => {
+  isCompletedTasksExpanded.value = !isCompletedTasksExpanded.value;
+};
+
+// Split tasks into active and completed
+const activeTasks = computed(() => {
+  if (!props.selectedCustomer?.tasks) return [];
+  
+  const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3 };
+  
+  return props.selectedCustomer.tasks
+    .filter(task => task.status !== 'Done')
+    .sort((a, b) => {
+      // Sort by priority: High, Medium, Low
+      return (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
+    });
+});
+
+const completedTasks = computed(() => {
+  if (!props.selectedCustomer?.tasks) return [];
+  
+  return props.selectedCustomer.tasks
+    .filter(task => task.status === 'Done');
+});
+
+// ============================================
 // CONTACTS EDITING
 // ============================================
 // Store contacts as an array for easy reordering
@@ -778,5 +1029,17 @@ const formatEmployeeCount = (count: string) => {
   if (num < 500) return "251-500";
   if (num < 1000) return "501-1000";
   return "1000+";
+};
+
+// Format task dates for display
+const formatTaskDate = (date: Date | null): string => {
+  if (!date) return "-";
+  
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  
+  return `${day}.${month}.${year}`;
 };
 </script>

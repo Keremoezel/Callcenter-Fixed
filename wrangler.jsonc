@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "crm-final",
+  "main": "./.output/server/index.mjs",
+  "compatibility_date": "2026-01-28",
+  "assets": {
+    "directory": "./.output/public/",
+    "binding": "STATIC_ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "crm-final-db",
+      "database_id": "829ca3f3-9ede-4d3c-a700-165fb50b30bb"
+    }
+  ]
+}

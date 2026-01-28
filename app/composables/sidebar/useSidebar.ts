@@ -1,38 +1,38 @@
 import { ref } from "vue";
 
 export const useSidebar = () => {
-  // Desktop sidebar durumu
+  // Desktop sidebar state
   const isOpen = ref(true);
 
-  // Mobil sidebar durumu
+  // Mobil sidebar state
   const isMobileOpen = ref(false);
 
-  // Desktop sidebar durumunu değiştirme
+  // Desktop sidebar state changen
   const toggle = () => {
     isOpen.value = !isOpen.value;
   };
 
-  // Mobil sidebar'ı açma
+  // Mobil sidebar öffnen
   const openMobile = () => {
     isMobileOpen.value = true;
   };
 
-  // Mobil sidebar'ı kapatma
+  // Mobile sidebar schließen
   const closeMobile = () => {
     isMobileOpen.value = false;
   };
 
-  // Mobil sidebar durumunu değiştirme
+  // mobile sidebar state changen
   const toggleMobile = () => {
     isMobileOpen.value = !isMobileOpen.value;
   };
 
   return {
-    // Durumlar
+    // Die States
     isOpen,
     isMobileOpen,
 
-    // Metodlar
+    // Die methods
     toggle,
     openMobile,
     closeMobile,

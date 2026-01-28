@@ -13,6 +13,11 @@ export default defineTask({
     try {
       // Delete in reverse order of dependencies (to avoid foreign key constraint errors)
 
+      // 0. Delete tasks (references companies, users)
+      const tasksResult = await db.run(sql`DELETE FROM tasks`)
+      console.log(`✅ Deleted tasks: ${tasksResult.meta.changes} rows`)
+
+
       // 1. Delete activities (references companies, contacts, users)
       const activitiesResult = await db.run(sql`DELETE FROM activities`)
       console.log(`✅ Deleted activities: ${activitiesResult.meta.changes} rows`)
