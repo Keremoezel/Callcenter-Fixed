@@ -10,6 +10,9 @@
   "observability": {
     "enabled": true
   },
+  "vars": {
+    "BETTER_AUTH_URL": "https://crm-final.keremoezel.workers.dev"
+  },
   "d1_databases": [
     {
       "binding": "DB",
