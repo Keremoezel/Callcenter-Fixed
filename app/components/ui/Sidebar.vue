@@ -24,7 +24,7 @@ const navGroups = computed(() => [
   {
     title: "Team",
     items: [{ to: "/teams/my", label: "Mein Team", icon: "teams" }],
-    show: hasRole("TeamLead") || hasRole("Agent"),
+    show: hasRole("Teamlead") || hasRole("Agent"),
   },
   {
     title: "Verwaltung",
@@ -33,7 +33,14 @@ const navGroups = computed(() => [
       { to: "/users", label: "Benutzer", icon: "users" },
       { to: "/call-scripts", label: "Skripte", icon: "clipboard" },
     ],
-    show: hasRole("Admin"),
+    show: hasRole("Admin") || hasRole("Teamlead"),
+  },
+  {
+    title: "Admin",
+    items: [
+      { to: "/admin/users", label: "Benutzerverwaltung", icon: "users" },
+    ],
+    show: hasRole("Admin") || hasRole("Teamlead"),
   },
   {
     title: "Hilfe & Support",
@@ -91,7 +98,7 @@ const isItemActive = (to: string) => {
     <!-- Navigation -->
     <nav class="flex-1 p-4 space-y-8 overflow-y-auto scrollbar-hide">
       <div
-        v-for="group in navGroups.filter((g) => !g.show || g.show)"
+        v-for="group in navGroups.filter((g) => g.show !== false)"
         :key="group.title"
         class="space-y-3"
       >
@@ -201,7 +208,7 @@ const isItemActive = (to: string) => {
     <!-- Mobile Navigation -->
     <nav class="flex-1 p-4 space-y-6 overflow-y-auto scrollbar-hide">
       <div
-        v-for="group in navGroups.filter((g) => !g.show || g.show)"
+        v-for="group in navGroups.filter((g) => g.show !== false)"
         :key="group.title"
         class="space-y-2"
       >

@@ -293,9 +293,9 @@
                     <td class="py-2 px-3">
                       <span
                         :class="{
-                          'text-red-600 font-semibold': task.priority === 'High',
-                          'text-orange-600': task.priority === 'Medium',
-                          'text-gray-600': task.priority === 'Low',
+                          'text-red-600 font-semibold': task.priority === 'Hoch',
+                          'text-orange-600': task.priority === 'Mittel',
+                          'text-gray-600': task.priority === 'Niedrig',
                         }"
                       >
                         {{ task.priority }}
@@ -402,9 +402,9 @@
                     <td class="py-2 px-3">
                       <span
                         :class="{
-                          'text-red-600 font-semibold': task.priority === 'High',
-                          'text-orange-600': task.priority === 'Medium',
-                          'text-gray-600': task.priority === 'Low',
+                          'text-red-600 font-semibold': task.priority === 'Hoch',
+                          'text-orange-600': task.priority === 'Mittel',
+                          'text-gray-600': task.priority === 'Niedrig',
                         }"
                       >
                         {{ task.priority }}
@@ -544,6 +544,57 @@
                 >
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Zuweisungshistorie -->
+        <div v-if="selectedCustomer.allAssignments && selectedCustomer.allAssignments.length > 0" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-lg font-bold text-gray-800">
+              Zuweisungshistorie ({{ selectedCustomer.allAssignments.length }})
+            </h3>
+          </div>
+          
+          <div class="overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Datum</th>
+                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Agent</th>
+                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Team</th>
+                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr
+                  v-for="(assignment, index) in selectedCustomer.allAssignments"
+                  :key="assignment.id"
+                  :class="index === 0 ? 'bg-blue-50' : ''"
+                >
+                  <td class="px-4 py-2 text-sm text-gray-700">
+                    {{ formatDate(assignment.assignedAt) }}
+                  </td>
+                  <td class="px-4 py-2 text-sm text-gray-900 font-medium">
+                    {{ assignment.agentName || "-" }}
+                  </td>
+                  <td class="px-4 py-2 text-sm text-gray-700">
+                    {{ assignment.teamName || "-" }}
+                  </td>
+                  <td class="px-4 py-2">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                      :class="{
+                        'bg-green-100 text-green-800': assignment.status === 'Neu Importiert',
+                        'bg-blue-100 text-blue-800': assignment.status === 'Re-Importiert',
+                        'bg-gray-100 text-gray-800': !['Neu Importiert', 'Re-Importiert'].includes(assignment.status)
+                      }"
+                    >
+                      {{ assignment.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -869,7 +920,7 @@ const toggleCompletedTasksExpanded = () => {
 const activeTasks = computed(() => {
   if (!props.selectedCustomer?.tasks) return [];
   
-  const priorityOrder: Record<string, number> = { 'High': 1, 'Medium': 2, 'Low': 3 };
+  const priorityOrder: Record<string, number> = { 'Hoch': 1, 'Mittel': 2, 'Niedrig': 3 };
   
   return props.selectedCustomer.tasks
     .filter(task => task.status !== 'Done')
@@ -1041,5 +1092,19 @@ const formatTaskDate = (date: Date | null): string => {
   const year = d.getFullYear();
   
   return `${day}.${month}.${year}`;
+};
+
+// Format date with time for assignment history
+const formatDate = (date: Date | string | null): string => {
+  if (!date) return "-";
+  
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
 };
 </script>

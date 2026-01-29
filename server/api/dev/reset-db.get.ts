@@ -8,7 +8,7 @@ import {
   tasks,
   teamMembers,
   teams,
-  users,
+  user,
 } from "../../database/schema";
 import { sql } from "drizzle-orm";
 

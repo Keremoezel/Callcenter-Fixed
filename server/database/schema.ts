@@ -2,25 +2,28 @@ import { sqliteTable, text, integer, unique } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
 /**
- * BENUTZER- UND TEAMVERWALTUNG
- * (User and Team Management)
+ * BETTER AUTH TABLES
+ * These tables are required by Better Auth for authentication
  */
 
-// Mit Keycloak synchronisierte Benutzertabelle
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey(), // UUID von Keycloak
+// Better Auth user table - replaces old users table
+export const user = sqliteTable("user", {
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
-  role: text("role").notNull(), // 'Admin|Teamlead|Agent'
-  avatar: text("avatar"),
+  emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+  image: text("image"),
+  role: text("role").notNull().default("Agent"), // 'Admin|Teamlead|Agent'
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
   updatedAt: integer("updated_at", { mode: "timestamp" }),
 });
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  ledTeams: many(teams, { relationName: "teamLead" }), // ein teamleiter hat mehrere teams
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  ledTeams: many(teams, { relationName: "teamLead" }),
   teamMemberships: many(teamMembers),
   assignmentsAsAgent: many(assignments, { relationName: "agent" }),
   assignmentsAsAssigner: many(assignments, { relationName: "assigner" }),
@@ -30,21 +33,87 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   createdTasks: many(tasks, { relationName: "taskAssigner" }),
 }));
 
+// Better Auth session table
+export const session = sqliteTable("session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
+  }),
+}));
+
+// Better Auth account table (for OAuth providers)
+export const account = sqliteTable("account", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+// Better Auth verification table
+export const verification = sqliteTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+/**
+ * TEAMVERWALTUNG
+ * (Team Management)
+ */
+
 export const teams = sqliteTable("teams", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   teamleadId: text("teamlead_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "set null" }),
+    .references(() => user.id, { onDelete: "set null" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
-  teamlead: one(users, {
+  teamlead: one(user, {
     fields: [teams.teamleadId],
-    references: [users.id],
+    references: [user.id],
     relationName: "teamLead",
   }),
   members: many(teamMembers),
@@ -61,7 +130,7 @@ export const teamMembers = sqliteTable(
       .references(() => teams.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => user.id, { onDelete: "cascade" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
@@ -76,9 +145,9 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
     fields: [teamMembers.teamId],
     references: [teams.id],
   }),
-  user: one(users, {
+  user: one(user, {
     fields: [teamMembers.userId],
-    references: [users.id],
+    references: [user.id],
   }),
 }));
 
@@ -124,14 +193,13 @@ export const companiesRelations = relations(companies, ({ one, many }) => ({
 
 export const conversationNotes = sqliteTable("conversation_notes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  // Annahme: Jede Firma hat nur einen Satz an Notizen (1-zu-1)
   companyId: integer("company_id")
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: "cascade" }),
   conversationHook: text("conversation_hook"),
   researchResult: text("research_result"),
-  updatedBy: text("updated_by").references(() => users.id, {
+  updatedBy: text("updated_by").references(() => user.id, {
     onDelete: "set null",
   }),
   updatedAt: integer("updated_at", { mode: "timestamp" })
@@ -146,9 +214,9 @@ export const conversationNotesRelations = relations(
       fields: [conversationNotes.companyId],
       references: [companies.id],
     }),
-    updater: one(users, {
+    updater: one(user, {
       fields: [conversationNotes.updatedBy],
-      references: [users.id],
+      references: [user.id],
     }),
   })
 );
@@ -170,7 +238,7 @@ export const contacts = sqliteTable("contacts", {
   linkedin: text("linkedin"),
   xing: text("xing"),
   facebook: text("facebook"),
-  notes: text("notes"), // Added notes column
+  notes: text("notes"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -199,18 +267,17 @@ export const assignments = sqliteTable(
     teamId: integer("team_id").references(() => teams.id, {
       onDelete: "set null",
     }),
-    agentId: text("agent_id").references(() => users.id, {
+    agentId: text("agent_id").references(() => user.id, {
       onDelete: "set null",
     }),
     status: text("status"),
     assignedAt: integer("assigned_at", { mode: "timestamp" })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    assignedBy: text("assigned_by").references(() => users.id, {
+    assignedBy: text("assigned_by").references(() => user.id, {
       onDelete: "set null",
     }),
   }
-  // ein caompany hat mehr den 1 assigment haben
 );
 
 export const assignmentsRelations = relations(assignments, ({ one }) => ({
@@ -222,14 +289,14 @@ export const assignmentsRelations = relations(assignments, ({ one }) => ({
     fields: [assignments.teamId],
     references: [teams.id],
   }),
-  agent: one(users, {
+  agent: one(user, {
     fields: [assignments.agentId],
-    references: [users.id],
+    references: [user.id],
     relationName: "agent",
   }),
-  assigner: one(users, {
+  assigner: one(user, {
     fields: [assignments.assignedBy],
-    references: [users.id],
+    references: [user.id],
     relationName: "assigner",
   }),
 }));
@@ -244,7 +311,7 @@ export const activities = sqliteTable("activities", {
   }),
   userId: text("user_id")
     .notNull()
-    .references(() => users.id, { onDelete: "set null" }),
+    .references(() => user.id, { onDelete: "set null" }),
   type: text("type").notNull(), // 'CALL|EMAIL|MEETING|NOTE'
   subject: text("subject"),
   content: text("content"),
@@ -264,9 +331,9 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
     fields: [activities.contactId],
     references: [contacts.id],
   }),
-  user: one(users, {
+  user: one(user, {
     fields: [activities.userId],
-    references: [users.id],
+    references: [user.id],
   }),
 }));
 
@@ -281,10 +348,10 @@ export const tasks = sqliteTable("tasks", {
   priority: text("priority").notNull(), // 'High', 'Medium', 'Low'
   dueDate: integer("due_date", { mode: "timestamp" }),
   followUpDate: integer("follow_up_date", { mode: "timestamp" }),
-  assignedBy: text("assigned_by").references(() => users.id, {
+  assignedBy: text("assigned_by").references(() => user.id, {
     onDelete: "set null",
   }),
-  assignedTo: text("assigned_to").references(() => users.id, {
+  assignedTo: text("assigned_to").references(() => user.id, {
     onDelete: "set null",
   }),
   description: text("description"),
@@ -300,15 +367,14 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     fields: [tasks.companyId],
     references: [companies.id],
   }),
-  assigner: one(users, {
+  assigner: one(user, {
     fields: [tasks.assignedBy],
-    references: [users.id],
+    references: [user.id],
     relationName: "taskAssigner",
   }),
-  assignee: one(users, {
+  assignee: one(user, {
     fields: [tasks.assignedTo],
-    references: [users.id],
+    references: [user.id],
     relationName: "taskAssignee",
   }),
 }));
-

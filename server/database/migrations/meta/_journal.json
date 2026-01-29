@@ -29,6 +29,13 @@
       "when": 1764248421801,
       "tag": "0003_parched_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1769610517607,
+      "tag": "0004_slimy_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

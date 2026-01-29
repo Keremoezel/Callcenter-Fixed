@@ -20,7 +20,40 @@ export interface Task {
 }
 
 export function useTasks() {
-    const { data: tasks, error, status, refresh } = useFetch<Task[]>("/api/tasks");
+    // Pagination state
+    const page = ref(1);
+    const limit = ref(10);
+    
+    // Filter state
+    const filters = ref({
+        status: '',
+        priority: '',
+        assignedTo: '',
+        company: '',
+        dueDate: '',
+    });
+    
+    const { data: response, error, status, refresh } = useFetch("/api/tasks", {
+        query: computed(() => ({
+            page: page.value,
+            limit: limit.value,
+            status: filters.value.status || undefined,
+            priority: filters.value.priority || undefined,
+            assignedTo: filters.value.assignedTo || undefined,
+            company: filters.value.company || undefined,
+            dueDate: filters.value.dueDate || undefined,
+        })),
+    });
+
+    // Extract tasks from paginated response
+    const tasks = computed(() => response.value?.data || []);
+    const pagination = computed(() => response.value?.pagination || {
+        total: 0,
+        page: 1,
+        limit: 10,
+        pages: 0,
+    });
+
     const selectedTask: Ref<Task | null> = ref(null);
 
     const selectTask = (task: Task) => {
@@ -58,8 +91,18 @@ export function useTasks() {
         }
     };
 
+    const loadPage = (newPage: number) => {
+        page.value = newPage;
+    };
+
+    const setFilters = (newFilters: typeof filters.value) => {
+        filters.value = newFilters;
+        page.value = 1; // Reset to first page when filters change
+    };
+
     return {
         tasks,
+        pagination,
         selectedTask,
         selectTask,
         createTask,
@@ -68,5 +111,8 @@ export function useTasks() {
         status,
         error,
         refresh,
+        loadPage,
+        page,
+        setFilters,
     };
 }

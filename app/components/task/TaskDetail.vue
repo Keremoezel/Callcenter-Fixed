@@ -77,6 +77,7 @@
             v-model="formData.status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
+            <option value="Nicht angefasst">Nicht angefasst</option>
             <option value="angefasst">angefasst</option>
             <option value="Recherchiert">Recherchiert</option>
             <option value="Bearbeitet">Bearbeitet</option>
@@ -93,9 +94,9 @@
             v-model="formData.priority"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
+            <option value="Niedrig">Niedrig</option>
+            <option value="Mittel">Mittel</option>
+            <option value="Hoch">Hoch</option>
           </select>
         </div>
       </div>
@@ -168,7 +169,7 @@ const formData = ref({
   title: "",
   companyId: undefined as number | undefined,
   status: "angefasst",
-  priority: "Medium",
+  priority: "Mittel",
   dueDate: "",
   followUpDate: "",
   assignedTo: undefined as string | undefined,
@@ -193,7 +194,7 @@ watch(() => props.task, (newTask) => {
       title: "",
       companyId: undefined,
       status: "angefasst",
-      priority: "Medium",
+      priority: "Mittel",
       dueDate: "",
       followUpDate: "",
       assignedTo: undefined,
