@@ -1,23 +1,23 @@
 <template>
   <div class="min-h-screen bg-white">
-    <!-- Tabs -->
+    <!-- Tabs (kompakt) -->
     <div class="border-b border-gray-200 bg-white">
       <div class="max-w-7xl mx-auto px-6">
-        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+        <nav class="-mb-px flex space-x-4" aria-label="Tabs">
           <button
             @click="activeTab = 'active'"
             :class="[
               activeTab === 'active'
                 ? 'border-blue-500 text-gray-900'
                 : 'border-transparent text-gray-500 hover:border-gray-200 hover:text-gray-700',
-              'whitespace-nowrap border-b-2 py-3.5 px-1 text-sm font-normal transition-colors'
+              'whitespace-nowrap border-b-2 py-2 px-1 text-xs font-medium transition-colors'
             ]"
           >
             Aktive Aufgaben
             <span
               :class="[
                 activeTab === 'active' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600',
-                'ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium'
+                'ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium'
               ]"
             >
               {{ activeTasks.length }}
@@ -29,14 +29,14 @@
               activeTab === 'history'
                 ? 'border-blue-500 text-gray-900'
                 : 'border-transparent text-gray-500 hover:border-gray-200 hover:text-gray-700',
-              'whitespace-nowrap border-b-2 py-3.5 px-1 text-sm font-normal transition-colors'
+              'whitespace-nowrap border-b-2 py-2 px-1 text-xs font-medium transition-colors'
             ]"
           >
             Aufgaben-Historie
             <span
               :class="[
                 activeTab === 'history' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600',
-                'ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium'
+                'ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium'
               ]"
             >
               {{ historyTasks.length }}
@@ -267,19 +267,19 @@
       />
     </div>
 
-    <!-- Task Edit/Create Modal -->
+    <!-- Task Edit/Create Modal: Schließt nur über Abbrechen / Speichern / Löschen, nicht durch Klick außerhalb -->
     <Teleport to="body">
       <div
         v-if="isModalOpen"
         class="fixed inset-0 z-50 overflow-y-auto"
-        @click.self="closeModal"
       >
-        <div class="fixed inset-0 bg-gray-900 bg-opacity-30 transition-opacity"></div>
-        
-        <div class="flex min-h-full items-center justify-center p-4">
+        <div
+          class="fixed inset-0 bg-gray-900 bg-opacity-30 transition-opacity"
+          aria-hidden="true"
+        />
+        <div class="flex min-h-full items-center justify-center p-4 pointer-events-none">
           <div
-            class="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            @click.stop
+            class="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto"
           >
             <TaskDetail
               :task="selectedTask"
@@ -290,6 +290,7 @@
               @save="handleSave"
               @delete="handleDelete"
               @close="closeModal"
+              @unsaved-change="hasModalUnsavedChanges = $event"
             />
           </div>
         </div>
@@ -384,7 +385,9 @@ const activeTab = ref<'active' | 'history'>('active');
 const isModalOpen = ref(false);
 const isNewTask = ref(false);
 const saving = ref(false);
+const hasModalUnsavedChanges = ref(false);
 
+// Nur nicht erledigte Aufgaben; Erledigt erscheint nur in der Historie
 const activeTasks = computed(() => {
   return (tasks.value || []).filter(task => task.status !== 'Erledigt');
 });
@@ -412,6 +415,7 @@ const openEditModal = (task: any) => {
 const closeModal = () => {
   isModalOpen.value = false;
   selectedTask.value = null;
+  hasModalUnsavedChanges.value = false;
 };
 
 const handleSave = async (data: any) => {
@@ -457,7 +461,20 @@ watch(isModalOpen, (open) => {
   }
 });
 
+// Beim Refresh/Schließen warnen, wenn ungespeicherte Änderungen im Modal
+const UNSAVED_MESSAGE = 'Sie haben ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?';
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (isModalOpen.value && hasModalUnsavedChanges.value) {
+    e.preventDefault();
+    e.returnValue = UNSAVED_MESSAGE;
+    return UNSAVED_MESSAGE;
+  }
+}
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload);
+});
 onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
   document.body.style.overflow = '';
 });
 </script>

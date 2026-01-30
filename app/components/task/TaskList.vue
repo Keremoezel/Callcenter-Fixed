@@ -59,6 +59,9 @@
                   <th class="text-left px-5 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Kunde
                   </th>
+                  <th class="text-left px-5 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap min-w-[7rem]">
+                    Zugewiesen an
+                  </th>
                   <th class="text-left px-5 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
                     Beschreibung
                   </th>
@@ -91,6 +94,9 @@
                   </td>
                   <td class="px-5 py-3 border-b border-gray-100">
                     <div class="text-sm font-medium text-gray-700">{{ task.companyName }}</div>
+                  </td>
+                  <td class="px-5 py-3 border-b border-gray-100">
+                    <div class="text-sm text-gray-700">{{ task.assigneeName || '–' }}</div>
                   </td>
                   <td class="px-5 py-3 border-b border-gray-100">
                     <div class="text-xs text-gray-500 max-w-xs truncate" :title="task.description || ''">

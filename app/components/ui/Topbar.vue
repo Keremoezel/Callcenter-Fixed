@@ -47,7 +47,7 @@ const handleLogout = async () => {
       <button
         class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl hover:bg-[var(--winered-medium)] focus:outline-none transition-colors duration-200"
         @click="toggleMobile"
-        :title="'Menüyü aç'"
+        :title="'Menü öffnen'"
       >
         <svg
           class="w-5 h-5 text-[var(--winered-text)]"

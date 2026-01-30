@@ -7,7 +7,7 @@ export const useSidebar = () => {
   // Mobil sidebar state
   const isMobileOpen = ref(false);
 
-  // Desktop sidebar state changen
+  // Desktop-Sidebar ein-/ausblenden
   const toggle = () => {
     isOpen.value = !isOpen.value;
   };
@@ -22,7 +22,7 @@ export const useSidebar = () => {
     isMobileOpen.value = false;
   };
 
-  // mobile sidebar state changen
+  // Mobil-Sidebar umschalten
   const toggleMobile = () => {
     isMobileOpen.value = !isMobileOpen.value;
   };

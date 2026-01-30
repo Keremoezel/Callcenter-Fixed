@@ -60,6 +60,15 @@ export interface Customer {
   conversationHook?: string;
   researchResult?: string;
   tasks?: Task[];
+  /** Zuweisungshistorie – von /api/customers mitgeliefert */
+  allAssignments?: Array<{
+    id: number;
+    status: string | null;
+    agentName: string | null;
+    teamName: string | null;
+    assignedAt: Date | string;
+    assignedBy: string | null;
+  }>;
 }
 
 export function useCustomers() {

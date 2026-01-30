@@ -39,6 +39,7 @@ const navGroups = computed(() => [
     title: "Admin",
     items: [
       { to: "/admin/users", label: "Benutzerverwaltung", icon: "users" },
+      { to: "/admin/analyse", label: "Agent Analyse", icon: "chart" },
     ],
     show: hasRole("Admin") || hasRole("Teamlead"),
   },

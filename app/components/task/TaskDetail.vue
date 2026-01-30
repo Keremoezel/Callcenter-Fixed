@@ -163,6 +163,7 @@ const emit = defineEmits<{
   (e: "save", data: any): void;
   (e: "delete", id: number): void;
   (e: "close"): void;
+  (e: "unsaved-change", value: boolean): void;
 }>();
 
 const formData = ref({
@@ -176,9 +177,12 @@ const formData = ref({
   description: "",
 });
 
-// Watch for task changes to update form data
-watch(() => props.task, (newTask) => {
-  if (newTask && !props.isNew) {
+// Snapshot beim Öffnen für „ungespeicherte Änderungen“
+const initialFormSnapshot = ref("");
+
+// Form nur beim Öffnen füllen, nicht bei jeder task-Änderung (verhindert Schließen/Flackern beim Tippen)
+watch([() => props.task, () => props.isNew], ([newTask, isNew]) => {
+  if (newTask && !isNew) {
     formData.value = {
       title: newTask.title,
       companyId: newTask.companyId,
@@ -189,7 +193,7 @@ watch(() => props.task, (newTask) => {
       assignedTo: newTask.assignedTo || undefined,
       description: newTask.description || "",
     };
-  } else if (props.isNew) {
+  } else if (isNew) {
     formData.value = {
       title: "",
       companyId: undefined,
@@ -201,7 +205,14 @@ watch(() => props.task, (newTask) => {
       description: "",
     };
   }
+  initialFormSnapshot.value = JSON.stringify(formData.value);
 }, { immediate: true });
+
+// Ungespeicherte Änderungen: bei Änderung an Parent melden (für beforeunload)
+watch(formData, () => {
+  const hasUnsaved = JSON.stringify(formData.value) !== initialFormSnapshot.value;
+  emit("unsaved-change", hasUnsaved);
+}, { deep: true });
 
 const markAsComplete = () => {
   formData.value.status = "Erledigt";

@@ -378,3 +378,28 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     relationName: "taskAssignee",
   }),
 }));
+
+/**
+ * Änderungsverlauf pro Kunde (Statusverlauf / Audit Log)
+ */
+export const companyChangeLog = sqliteTable("company_change_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  companyId: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  entityType: text("entity_type").notNull(), // 'company' | 'task' | 'notes'
+  entityId: text("entity_id"), // e.g. task id
+  action: text("action").notNull(), // 'updated' | 'created'
+  label: text("label").notNull(), // z.B. "Adresse geändert", "Status → Erledigt"
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const companyChangeLogRelations = relations(companyChangeLog, ({ one }) => ({
+  company: one(companies, { fields: [companyChangeLog.companyId], references: [companies.id] }),
+  user: one(users, { fields: [companyChangeLog.userId], references: [users.id] }),
+}));

@@ -1,7 +1,7 @@
 import { ref, watch } from 'vue'
 import { useUnsavedChanges } from './useUnsavedChanges'
 
-//das ist für die forme der app fur der nutzung der ungespeicherten daten
+// Für Formulare: Nutzung ungespeicherter Änderungen (unsaved changes).
 
 export function useCustomerNotes(selectedCustomer: any, options: { onSave?: () => void } = {}) {
   const conversationHook = ref('')

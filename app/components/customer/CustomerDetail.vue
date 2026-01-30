@@ -226,18 +226,18 @@
           <!-- ACTIVE TASKS - High, Medium, Low priority -->
           <div
             v-if="activeTasks.length > 0"
-            class="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
+            class="bg-white border-l-4 border-l-blue-500 border border-gray-200 rounded-lg p-3 mb-4 shadow-sm"
           >
             <button
               @click="toggleActiveTasksExpanded"
-              class="w-full flex items-center justify-between mb-3 hover:bg-gray-50 rounded p-2 transition-colors"
+              class="w-full flex items-center justify-between mb-2 hover:bg-gray-50 rounded p-1.5 transition-colors"
             >
-              <h3 class="text-base font-bold text-gray-800">
+              <h3 class="text-sm font-semibold text-gray-800">
                 📋 Aktive Aufgaben ({{ activeTasks.length }})
               </h3>
               <svg
                 :class="[
-                  'w-5 h-5 text-gray-600 transition-transform',
+                  'w-4 h-4 text-gray-600 transition-transform',
                   isActiveTasksExpanded ? 'rotate-90' : '',
                 ]"
                 fill="none"
@@ -335,18 +335,18 @@
           <!-- COMPLETED TASKS - Erledigt -->
           <div
             v-if="completedTasks.length > 0"
-            class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-lg p-4 mb-6 shadow-sm"
+            class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-lg p-3 mb-4 shadow-sm"
           >
             <button
               @click="toggleCompletedTasksExpanded"
-              class="w-full flex items-center justify-between mb-3 hover:bg-gray-50 rounded p-2 transition-colors"
+              class="w-full flex items-center justify-between mb-2 hover:bg-gray-50 rounded p-1.5 transition-colors"
             >
-              <h3 class="text-base font-bold text-gray-800">
+              <h3 class="text-sm font-semibold text-gray-800">
                 ✅ Erledigte Aufgaben ({{ completedTasks.length }})
               </h3>
               <svg
                 :class="[
-                  'w-5 h-5 text-gray-600 transition-transform',
+                  'w-4 h-4 text-gray-600 transition-transform',
                   isCompletedTasksExpanded ? 'rotate-90' : '',
                 ]"
                 fill="none"
@@ -544,57 +544,6 @@
                 >
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Zuweisungshistorie -->
-        <div v-if="selectedCustomer.allAssignments && selectedCustomer.allAssignments.length > 0" class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="text-lg font-bold text-gray-800">
-              Zuweisungshistorie ({{ selectedCustomer.allAssignments.length }})
-            </h3>
-          </div>
-          
-          <div class="overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-100">
-                <tr>
-                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Datum</th>
-                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Agent</th>
-                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Team</th>
-                  <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="(assignment, index) in selectedCustomer.allAssignments"
-                  :key="assignment.id"
-                  :class="index === 0 ? 'bg-blue-50' : ''"
-                >
-                  <td class="px-4 py-2 text-sm text-gray-700">
-                    {{ formatDate(assignment.assignedAt) }}
-                  </td>
-                  <td class="px-4 py-2 text-sm text-gray-900 font-medium">
-                    {{ assignment.agentName || "-" }}
-                  </td>
-                  <td class="px-4 py-2 text-sm text-gray-700">
-                    {{ assignment.teamName || "-" }}
-                  </td>
-                  <td class="px-4 py-2">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                      :class="{
-                        'bg-green-100 text-green-800': assignment.status === 'Neu Importiert',
-                        'bg-blue-100 text-blue-800': assignment.status === 'Re-Importiert',
-                        'bg-gray-100 text-gray-800': !['Neu Importiert', 'Re-Importiert'].includes(assignment.status)
-                      }"
-                    >
-                      {{ assignment.status }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
 
