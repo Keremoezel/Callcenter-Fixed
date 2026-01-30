@@ -547,6 +547,31 @@
           </div>
         </div>
 
+        <!-- Änderungsverlauf -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-3">Änderungsverlauf</h3>
+          <div v-if="changeLogLoading" class="py-4 text-center text-gray-500 text-sm">Lade Einträge…</div>
+          <div v-else-if="!changeLogEntries.length" class="py-4 text-center text-gray-500 text-sm">Keine Änderungen erfasst.</div>
+          <ul v-else class="space-y-2">
+            <li
+              v-for="entry in changeLogEntries"
+              :key="entry.id"
+              class="flex flex-col gap-0.5 py-2 px-3 rounded-lg bg-white border border-gray-100 text-sm"
+            >
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <span class="font-medium text-gray-800">{{ entry.label }}</span>
+                <span class="text-xs text-gray-500 shrink-0">{{ formatChangeLogDate(entry.createdAt) }}</span>
+              </div>
+              <div v-if="entry.oldValue != null && entry.newValue != null" class="text-xs text-gray-600">
+                <span class="line-through">{{ entry.oldValue }}</span>
+                <span class="mx-1">→</span>
+                <span>{{ entry.newValue }}</span>
+              </div>
+              <div v-if="entry.userName" class="text-xs text-gray-500">von {{ entry.userName }}</div>
+            </li>
+          </ul>
+        </div>
+
         <div class="mb-6">
           <!-- Section Header with Edit Button -->
           <div class="flex justify-between items-center mb-3">
@@ -744,6 +769,51 @@ watch(() => props.selectedCustomer, () => {
 });
 
 // ============================================
+// ÄNDERUNGSVERLAUF (Change Log)
+// ============================================
+interface ChangeLogEntry {
+  id: number;
+  companyId: number;
+  entityType: string;
+  action: string;
+  label: string;
+  oldValue: string | null;
+  newValue: string | null;
+  userName: string | null;
+  createdAt: string | null;
+}
+const changeLogEntries = ref<ChangeLogEntry[]>([]);
+const changeLogLoading = ref(false);
+
+function formatChangeLogDate(iso: string | null): string {
+  if (!iso) return "–";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "–";
+  return d.toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
+}
+
+async function fetchChangeLog() {
+  if (!props.selectedCustomer?.id) {
+    changeLogEntries.value = [];
+    return;
+  }
+  changeLogLoading.value = true;
+  try {
+    const data = await $fetch<ChangeLogEntry[]>(`/api/customers/${props.selectedCustomer.id}/change-log`);
+    changeLogEntries.value = Array.isArray(data) ? data : [];
+  } catch {
+    changeLogEntries.value = [];
+  } finally {
+    changeLogLoading.value = false;
+  }
+}
+
+watch(() => props.selectedCustomer?.id, (id) => {
+  if (id) fetchChangeLog();
+  else changeLogEntries.value = [];
+}, { immediate: true });
+
+// ============================================
 // COMPANY INFO EDITING
 // ============================================
 // Temporary storage for company info while editing
@@ -801,15 +871,18 @@ const saveCompanyInfo = async () => {
       method: 'PUT',
       body: editedCompanyInfo.value
     });
-    
+
     // Exit edit mode
     isEditingCompanyInfo.value = false;
-    
+
     // Emit refresh to reload data
     emit('refresh');
-  } catch (error) {
+    // Reload change log so new entries (e.g. name change) appear
+    await fetchChangeLog();
+  } catch (error: unknown) {
     console.error("Failed to save company info:", error);
-    alert("Fehler beim Speichern der Unternehmensdaten.");
+    const msg = error && typeof error === 'object' && 'data' in error && (error as { data?: { message?: string } }).data?.message;
+    alert(msg ? `Fehler beim Speichern: ${msg}` : "Fehler beim Speichern der Unternehmensdaten.");
   }
 };
 
