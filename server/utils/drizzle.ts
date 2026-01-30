@@ -33,4 +33,4 @@ export function useDrizzle(event: H3Event) {
   throw new Error("dei datenbank nicht gefunden")
 }
 
-export type User = typeof schema.user.$inferSelect
+export type User = typeof schema.users.$inferSelect

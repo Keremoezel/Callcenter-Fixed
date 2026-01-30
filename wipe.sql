@@ -1,0 +1,16 @@
+PRAGMA foreign_keys = OFF;
+
+DROP TABLE IF EXISTS companies;
+DROP TABLE IF EXISTS contacts;
+DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS session;
+DROP TABLE IF EXISTS verification;
+DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS activities;
+DROP TABLE IF EXISTS assignments;
+DROP TABLE IF EXISTS conversation_notes;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS teams;
+
+PRAGMA foreign_keys = ON;

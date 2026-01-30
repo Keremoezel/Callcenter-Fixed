@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../../utils/drizzle";
-import { user } from "../../../database/schema";
+import { users } from "../../../database/schema";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../../../lib/auth";
 
@@ -49,12 +49,12 @@ export default eventHandler(async (event) => {
     const db = useDrizzle(event);
 
     await db
-        .update(user)
+        .update(users)
         .set({
             role: body.role,
             updatedAt: new Date(),
         })
-        .where(eq(user.id, userId));
+        .where(eq(users.id, userId));
 
     return { success: true };
 });

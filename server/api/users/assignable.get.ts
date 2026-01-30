@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../utils/drizzle";
-import { user, teams, teamMembers } from "../../database/schema";
+import { users, teams, teamMembers } from "../../database/schema";
 import { createAuth } from "../../lib/auth";
 import { eq, inArray, or } from "drizzle-orm";
 
@@ -22,7 +22,7 @@ export default eventHandler(async (event) => {
     // 2. Logic based on Role
     if (role === "Admin") {
         // Admin: Return ALL users
-        return await db.query.user.findMany({
+        return await db.query.users.findMany({
             columns: {
                 id: true,
                 name: true,
@@ -58,8 +58,8 @@ export default eventHandler(async (event) => {
             memberIds.push(currentUser.id);
         }
 
-        return await db.query.user.findMany({
-            where: inArray(user.id, memberIds),
+        return await db.query.users.findMany({
+            where: inArray(users.id, memberIds),
             columns: {
                 id: true,
                 name: true,

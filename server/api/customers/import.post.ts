@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../utils/drizzle";
-import { companies, contacts, assignments, conversationNotes, user, teams, teamMembers } from "../../database/schema";
+import { companies, contacts, assignments, conversationNotes, users, teams, teamMembers } from "../../database/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createAutoTask } from "../../utils/createAutoTask";

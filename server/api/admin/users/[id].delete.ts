@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../../utils/drizzle";
-import { user, session, account } from "../../../database/schema";
+import { users, sessions, account } from "../../../database/schema";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../../../lib/auth";
 
@@ -48,11 +48,11 @@ export default eventHandler(async (event) => {
     const db = useDrizzle(event);
 
     // Delete user's sessions and accounts first (cascade should handle this but just in case)
-    await db.delete(session).where(eq(session.userId, userId));
+    await db.delete(sessions).where(eq(sessions.userId, userId));
     await db.delete(account).where(eq(account.userId, userId));
 
     // Delete the user
-    await db.delete(user).where(eq(user.id, userId));
+    await db.delete(users).where(eq(users.id, userId));
 
     return { success: true };
 });

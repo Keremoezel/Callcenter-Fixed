@@ -27,8 +27,8 @@ export function createAuth(event: H3Event) {
         database: drizzleAdapter(db, {
             provider: "sqlite",
             schema: {
-                user: schema.user,
-                session: schema.session,
+                user: schema.users,
+                session: schema.sessions,
                 account: schema.account,
                 verification: schema.verification,
             },

@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../../utils/drizzle";
-import { user } from "../../../database/schema";
+import { users } from "../../../database/schema";
 import { createAuth } from "../../../lib/auth";
 import { sql } from "drizzle-orm";
 
@@ -37,11 +37,11 @@ export default eventHandler(async (event) => {
     const offset = (page - 1) * limit;
 
     // Get total count
-    const [totalResult] = await (db as any).select({ count: sql<number>`count(*)` }).from(user);
+    const [totalResult] = await (db as any).select({ count: sql<number>`count(*)` }).from(users);
     const total = Number(totalResult?.count) || 0;
     const totalPages = Math.ceil(total / limit);
 
-    const users = await db.query.user.findMany({
+    const allUsers = await db.query.users.findMany({
         columns: {
             id: true,
             email: true,
@@ -50,13 +50,13 @@ export default eventHandler(async (event) => {
             emailVerified: true,
             createdAt: true,
         },
-        orderBy: (user, { desc }) => [desc(user.createdAt)],
+        orderBy: (users, { desc }) => [desc(users.createdAt)],
         limit,
         offset,
     });
 
     return {
-        data: users,
+        data: allUsers,
         pagination: {
             total,
             page,
