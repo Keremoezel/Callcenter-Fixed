@@ -31,7 +31,7 @@ export default eventHandler(async (event) => {
 
     try {
         // First, create some users (agents/team leads) that we'll reference
-        await db.insert(schema.user).values([
+        await db.insert(schema.users).values([
             {
                 id: "agent-101",
                 email: "agent101@example.com",
