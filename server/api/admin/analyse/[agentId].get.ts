@@ -71,7 +71,7 @@ export default eventHandler(async (event) => {
                     inArray(teamMembers.teamId, myTeamIds)
                 )
             });
-            
+
             canView = memberRecords.length > 0;
         }
 
@@ -112,7 +112,7 @@ export default eventHandler(async (event) => {
             statusMessage: "Agent not found",
         });
     }
-    
+
     const teamName = teamMembership?.team?.name || null;
 
     // 5. **FIX N+1: Fetch ALL data in parallel bulk queries**
@@ -148,7 +148,7 @@ export default eventHandler(async (event) => {
     }
 
     // D1/SQLite bind limit; chunk companyIds to avoid "too many SQL variables"
-    const MAX_IN_CLAUSE = 400;
+    const MAX_IN_CLAUSE = 50; // Reduced to 50 for safety (D1 limit is ~400-500 total params)
     const chunk = <T>(arr: T[], size: number): T[][] => {
         const out: T[][] = [];
         for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
