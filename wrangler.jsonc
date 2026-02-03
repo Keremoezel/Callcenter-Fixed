@@ -3,13 +3,6 @@
   "name": "crm-final",
   "main": "./.output/server/index.mjs",
   "compatibility_date": "2026-01-28",
-  "assets": {
-    "directory": "./.output/public/",
-    "binding": "STATIC_ASSETS"
-  },
-  "observability": {
-    "enabled": true
-  },
   "vars": {
     "BETTER_AUTH_URL": "https://crm-final.keremoezel.workers.dev"
   },
@@ -24,17 +17,17 @@
   "env": {
     "preview": {
       "name": "crm-final-preview",
+      "vars": {
+        "BETTER_AUTH_URL": "https://preview.crm-final.keremoezel.workers.dev"
+      },
       "d1_databases": [
         {
           "binding": "DB",
-          "database_name": "crm-preview-db",
-          "database_id": "b4311278-470d-4b69-8d4f-a97d7b570be6",
+          "database_name": "crm-final-preview-db",
+          "database_id": "4de03627-ec8a-48dd-94c6-d9b8f71bd525",
           "migrations_dir": "./server/database/migrations"
         }
-      ],
-      "vars": {
-        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev"
-      }
+      ]
     }
   }
 }
