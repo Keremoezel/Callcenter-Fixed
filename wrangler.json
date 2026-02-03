@@ -1,8 +1,18 @@
 {
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "crm-final",
   "main": "./.output/server/index.mjs",
   "compatibility_date": "2026-01-28",
+  "assets": {
+    "directory": "./.output/public/",
+    "binding": "STATIC_ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
   "vars": {
     "BETTER_AUTH_URL": "https://crm-final.keremoezel.workers.dev"
   },
