@@ -354,8 +354,8 @@ const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
   };
 
 
-  const BATCH_SIZE = 30; // Increased batch size slightly for better throughput
-  const CONCURRENCY_LIMIT = 3; // Process 3 batches in parallel
+  const BATCH_SIZE = 50; // Increased to 50 for better speed (D1 limit is ~1000 params, 50 * ~10 fields = ~500 params safe)
+  const CONCURRENCY_LIMIT = 6; // Process 6 batches in parallel for high throughput
   
   const totalRows = data.length;
   const totalBatches = Math.ceil(totalRows / BATCH_SIZE);

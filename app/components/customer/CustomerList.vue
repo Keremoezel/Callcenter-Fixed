@@ -543,43 +543,8 @@
               </p>
             </div>
 
-            <!-- Loading State - Full Screen Overlay -->
-            <div v-if="isImporting" class="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-10 rounded-lg">
-              <div class="text-center p-8">
-                <svg
-                  class="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Import läuft...</h3>
-                <p class="text-sm text-gray-600 mb-1">
-                  Die Kunden werden gerade importiert.
-                </p>
-                <p class="text-xs text-gray-500">
-                  Bitte warten Sie, dies kann einige Zeit dauern.
-                </p>
-                <div class="mt-4 flex items-center justify-center gap-2">
-                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
-                </div>
-              </div>
-            </div>
+            <!-- Loading State - Full Screen Overlay REMOVED to show main progress bar -->
+            <!-- <div v-if="isImporting" ... > ... </div> -->
 
             <!-- Error Message -->
             <div v-if="importError && !isImporting" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">

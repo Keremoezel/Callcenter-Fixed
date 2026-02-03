@@ -396,9 +396,9 @@ export default eventHandler(async (event) => {
     try {
         await db.insert(importLogs).values({
             importedBy: currentUser.id,
-            projectName: projectName || null,
-            targetTeamId: finalTeamId,
-            targetAgentId: finalAgentId,
+            projectName: projectName || undefined,
+            targetTeamId: finalTeamId ? Number(finalTeamId) : undefined,
+            targetAgentId: finalAgentId || undefined,
             totalRows: customers.length,
             successCount: results.success,
             failedCount: results.failed,
