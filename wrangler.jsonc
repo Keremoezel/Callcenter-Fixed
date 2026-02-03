@@ -23,6 +23,7 @@
   ],
   "env": {
     "preview": {
+      "name": "crm-final-preview",
       "d1_databases": [
         {
           "binding": "DB",
@@ -32,7 +33,7 @@
         }
       ],
       "vars": {
-        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev" 
+        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev"
       }
     }
   }
