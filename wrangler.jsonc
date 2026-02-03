@@ -32,7 +32,7 @@
         }
       ],
       "vars": {
-        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev"
+        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev" 
       }
     }
   }
