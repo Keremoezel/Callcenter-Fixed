@@ -835,8 +835,8 @@ const handleImportConfirm = async () => {
       
       console.log('Excel Import Raw Data:', jsonData)
       
+      
       // Emit with optional team, agent and project name
-      // Modal will stay open and show loading state until import completes
       emit(
         'import',
         jsonData,
@@ -845,7 +845,8 @@ const handleImportConfirm = async () => {
         selectedProjectName.value || undefined
       )
       
-      // Don't close modal here - let parent handle it after import completes
+      // Close modal immediately to show the progress modal from parent
+      isImportModalOpen.value = false
     } catch (error) {
       console.error('Error parsing Excel file:', error)
       importError.value = 'Fehler beim Lesen der Excel-Datei.'

@@ -11,4 +11,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy ${{ github.ref_name != 'main' && '--env preview' || '' }} --config wrangler.json
+          command: deploy
