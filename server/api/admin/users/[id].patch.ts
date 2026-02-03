@@ -2,6 +2,7 @@ import { useDrizzle } from "../../../utils/drizzle";
 import { users } from "../../../database/schema";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../../../lib/auth";
+import { getUserRole, type UserRole } from "../../../utils/types";
 
 /**
  * PATCH /api/admin/users/:id
@@ -28,12 +29,20 @@ export default eventHandler(async (event) => {
         });
     }
 
-    // Check admin or teamlead role
-    const userRole = (session.user as any).role;
-    if (userRole !== "Admin" && userRole !== "Teamlead") {
+    // Only admins can change user roles (security: prevent privilege escalation)
+    const userRole: UserRole | undefined = getUserRole(session.user);
+    if (userRole !== "Admin") {
         throw createError({
             statusCode: 403,
-            statusMessage: "Forbidden - Admin or Teamlead access required",
+            statusMessage: "Zugriff verweigert - Admin-Berechtigung erforderlich",
+        });
+    }
+
+    // Cannot change your own role (prevents lock-out scenarios)
+    if (session.user.id === userId) {
+        throw createError({
+            statusCode: 400,
+            statusMessage: "Eigene Rolle kann nicht geändert werden",
         });
     }
 

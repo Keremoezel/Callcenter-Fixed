@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { H3Event } from "h3";
 import { useDrizzle } from "../utils/drizzle";
+import type { UserRole, CrmUser } from "../utils/types";
 import * as schema from "../database/schema";
 
 /**
@@ -50,7 +51,7 @@ export function createAuth(event: H3Event) {
             "http://localhost:8787",
             "http://127.0.0.1:8787",
             "https://crm-final.keremoezel.workers.dev",
-            "https://*.keremoezel.workers.dev", // All subdomains (branches, previews)
+            "https://*.keremoezel.workers.dev",
         ],
     });
 }

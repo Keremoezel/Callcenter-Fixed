@@ -2,6 +2,7 @@ import { useDrizzle } from "../../../utils/drizzle";
 import { users, sessions, account } from "../../../database/schema";
 import { eq } from "drizzle-orm";
 import { createAuth } from "../../../lib/auth";
+import { getUserRole, type UserRole } from "../../../utils/types";
 
 /**
  * DELETE /api/admin/users/:id
@@ -28,12 +29,12 @@ export default eventHandler(async (event) => {
         });
     }
 
-    // Check admin or teamlead role
-    const userRole = (currentSession.user as any).role;
-    if (userRole !== "Admin" && userRole !== "Teamlead") {
+    // Only admins can delete users (security: prevent privilege escalation)
+    const userRole: UserRole | undefined = getUserRole(currentSession.user);
+    if (userRole !== "Admin") {
         throw createError({
             statusCode: 403,
-            statusMessage: "Forbidden - Admin or Teamlead access required",
+            statusMessage: "Zugriff verweigert - Admin-Berechtigung erforderlich",
         });
     }
 

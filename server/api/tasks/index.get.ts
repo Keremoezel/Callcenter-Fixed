@@ -1,6 +1,7 @@
 import { useDrizzle } from "../../utils/drizzle";
 import { tasks, teams, teamMembers } from "../../database/schema";
 import { createAuth } from "../../lib/auth";
+import { getUserRole, type UserRole } from "../../utils/types";
 import { eq, inArray, and, type SQL, sql } from "drizzle-orm";
 
 export default eventHandler(async (event) => {
@@ -16,7 +17,7 @@ export default eventHandler(async (event) => {
     }
 
     const currentUser = session.user;
-    const role = (currentUser as any).role;
+    const role: UserRole | undefined = getUserRole(currentUser);
     const db = useDrizzle(event);
 
     // Pagination params
@@ -109,7 +110,7 @@ export default eventHandler(async (event) => {
             whereClause = and(whereClause, ...additionalConditions);
         } else {
             // Only additional filters
-            whereClause = additionalConditions.length > 1 
+            whereClause = additionalConditions.length > 1
                 ? and(...additionalConditions)
                 : additionalConditions[0];
         }
@@ -121,7 +122,7 @@ export default eventHandler(async (event) => {
         totalQuery = totalQuery.where(whereClause);
     }
     const [totalResult] = await totalQuery;
-    
+
     const total = Number(totalResult?.count) || 0;
     const totalPages = Math.ceil(total / limit);
 

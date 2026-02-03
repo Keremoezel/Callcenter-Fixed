@@ -2,6 +2,7 @@ import { useDrizzle } from "../../utils/drizzle";
 import { companies, contacts, assignments, conversationNotes, users, teams, teamMembers, importLogs } from "../../database/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
+import { getUserRole, type UserRole } from "../../utils/types";
 import { createAutoTask } from "../../utils/createAutoTask";
 
 // Import-Funktion für Kunden
@@ -18,7 +19,7 @@ export default eventHandler(async (event) => {
     }
 
     const currentUser = session.user;
-    const role = (currentUser as any).role;
+    const role: UserRole | undefined = getUserRole(currentUser);
 
     // 2. Berechtigungsprüfung (Agenten können nicht importieren)
     if (role === "Agent") {
@@ -239,14 +240,15 @@ export default eventHandler(async (event) => {
                     .from(contacts)
                     .where(eq(contacts.companyId, companyId));
 
-                // Neue Kontakte batch-insert (N+1 önleme)
-                const contactValues: Array<Record<string, unknown>> = [];
+                // Neue Kontakte batch-insert
+                type ContactInsert = typeof contacts.$inferInsert;
+                const contactValues: Omit<ContactInsert, 'id'>[] = [];
                 let isFirst = existingContacts.length === 0;
                 for (const row of rows) {
                     if (row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner) {
                         const role = row["Person-Funktion"] || row.Position || row.position;
                         const activity = row["Person-Tätigkeit"];
-                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || null;
+                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || undefined;
                         contactValues.push({
                             companyId: companyId,
                             firstName: row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
@@ -255,17 +257,17 @@ export default eventHandler(async (event) => {
                             phone: row["Person-Telefon"] || row.KontaktTelefon || row.contactPhone || row.Telefon || "",
                             position: combinedPosition,
                             isPrimary: isFirst,
-                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate,
-                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin,
-                            xing: row["Person-Xing"] || row.Xing || row.xing,
-                            facebook: row.Facebook || row.facebook,
+                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate || undefined,
+                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin || undefined,
+                            xing: row["Person-Xing"] || row.Xing || row.xing || undefined,
+                            facebook: row.Facebook || row.facebook || undefined,
                         });
                         isFirst = false;
                         contactsAddedCount++;
                     }
                 }
                 if (contactValues.length > 0) {
-                    await db.insert(contacts).values(contactValues as any);
+                    await db.insert(contacts).values(contactValues);
                 }
 
                 if (isUpdate) {
@@ -303,13 +305,14 @@ export default eventHandler(async (event) => {
 
                 companyId = newCompany.id;
 
-                // Kontakte batch-insert (N+1 önleme)
-                const newContactValues: Array<Record<string, unknown>> = [];
+                // Kontakte batch-insert
+                type ContactInsert = typeof contacts.$inferInsert;
+                const newContactValues: Omit<ContactInsert, 'id'>[] = [];
                 rows.forEach((row, index) => {
                     if (row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner) {
                         const role = row["Person-Funktion"] || row.Position || row.position;
                         const activity = row["Person-Tätigkeit"];
-                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || null;
+                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || undefined;
                         newContactValues.push({
                             companyId: companyId,
                             firstName: row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
@@ -318,16 +321,16 @@ export default eventHandler(async (event) => {
                             phone: row["Person-Telefon"] || row.KontaktTelefon || row.contactPhone || row.Telefon || "",
                             position: combinedPosition,
                             isPrimary: index === 0,
-                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate,
-                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin,
-                            xing: row["Person-Xing"] || row.Xing || row.xing,
-                            facebook: row.Facebook || row.facebook,
+                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate || undefined,
+                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin || undefined,
+                            xing: row["Person-Xing"] || row.Xing || row.xing || undefined,
+                            facebook: row.Facebook || row.facebook || undefined,
                         });
                         contactsAddedCount++;
                     }
                 });
                 if (newContactValues.length > 0) {
-                    await db.insert(contacts).values(newContactValues as any);
+                    await db.insert(contacts).values(newContactValues);
                 }
 
                 // Leere Gesprächsnotiz erstellen (nur für neue Firmen)
@@ -349,7 +352,7 @@ export default eventHandler(async (event) => {
                 assignedAt: new Date(),
                 assignedBy: currentUser.id,
             });
-            
+
             // Count new assignments
             if (isNewAssignment) {
                 results.assigned++;

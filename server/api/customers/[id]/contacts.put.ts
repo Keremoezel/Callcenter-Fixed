@@ -1,8 +1,16 @@
 import { contacts } from "../../../database/schema";
 import { eq, and, notInArray } from "drizzle-orm";
 import { useDrizzle } from "../../../utils/drizzle";
+import { createAuth } from "../../../lib/auth";
 
 export default eventHandler(async (event) => {
+    // Auth check - require authenticated user
+    const auth = createAuth(event);
+    const session = await auth.api.getSession({ headers: event.headers });
+    if (!session?.user) {
+        throw createError({ statusCode: 401, statusMessage: "Nicht autorisiert" });
+    }
+
     const companyId = parseInt(getRouterParam(event, 'id') || '0');
     const body = await readBody(event); // Expects array of contacts
     const db = useDrizzle(event);
@@ -38,35 +46,43 @@ export default eventHandler(async (event) => {
         await db.delete(contacts).where(eq(contacts.companyId, companyId));
     }
 
-    // 2. Upsert (Update existing, Insert new) – N+1 önleme: yeni kayıtları batch insert
-    const toUpdate: Array<{ id: number; data: Record<string, unknown> }> = [];
-    const toInsert: Array<Record<string, unknown>> = [];
+    // 2. Upsert (Update existing, Insert new) – Batch insert für neue Kontakte
+    // Using type from contacts schema for proper typing
+    type ContactData = typeof contacts.$inferInsert;
+
+    const toUpdate: Array<{ id: number; data: Partial<ContactData> }> = [];
+    const toInsert: Omit<ContactData, 'id'>[] = [];
+
     for (const contact of incomingContacts) {
-        const contactData = {
+        const contactData: Omit<ContactData, 'id'> = {
             companyId: companyId,
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            email: contact.email,
-            phone: contact.phoneNumber,
-            position: contact.position,
-            birthDate: contact.birthDate,
-            isPrimary: contact.isPrimary,
-            linkedin: contact.social?.linkedin,
-            xing: contact.social?.xing,
-            facebook: contact.social?.facebook,
-            notes: contact.notizen,
+            firstName: contact.firstName ?? "",
+            lastName: contact.lastName ?? undefined,
+            email: contact.email ?? undefined,
+            phone: contact.phoneNumber ?? undefined,
+            position: contact.position ?? undefined,
+            birthDate: contact.birthDate ?? undefined,
+            isPrimary: contact.isPrimary ?? undefined,
+            linkedin: contact.social?.linkedin ?? undefined,
+            xing: contact.social?.xing ?? undefined,
+            facebook: contact.social?.facebook ?? undefined,
+            notes: contact.notizen ?? undefined,
         };
         if (contact.id) {
-            toUpdate.push({ id: contact.id, data: contactData });
+            toUpdate.push({ id: parseInt(contact.id, 10), data: contactData });
         } else {
             toInsert.push(contactData);
         }
     }
+
+    // Update existing contacts (N+1 leider unvermeidbar bei individuellen Updates)
     for (const { id, data } of toUpdate) {
         await db.update(contacts)
             .set(data)
             .where(and(eq(contacts.id, id), eq(contacts.companyId, companyId)));
     }
+
+    // Batch insert new contacts
     if (toInsert.length > 0) {
         await db.insert(contacts).values(toInsert);
     }

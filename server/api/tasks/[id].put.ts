@@ -16,33 +16,52 @@ export default eventHandler(async (event) => {
         throw createError({ statusCode: 400, message: "Invalid task ID" });
     }
 
+    // Auth check - require authenticated user
     const auth = createAuth(event);
     const session = await auth.api.getSession({ headers: event.headers });
-    const userId = session?.user?.id ?? null;
+    if (!session?.user) {
+        throw createError({ statusCode: 401, statusMessage: "Nicht autorisiert" });
+    }
+    const userId = session.user.id;
 
     const oldTask = await db.query.tasks.findFirst({
         where: eq(tasks.id, taskId),
         columns: { companyId: true, status: true, title: true },
     });
 
+    if (!oldTask) {
+        throw createError({ statusCode: 404, message: "Aufgabe nicht gefunden" });
+    }
+
+    // Validate enum values (security: prevent arbitrary values)
+    const validStatuses = ["Open", "In Progress", "Erledigt", "Cancelled"];
+    const validPriorities = ["Low", "Medium", "High"];
+
+    const status = validStatuses.includes(body.status) ? body.status : oldTask.status;
+    const priority = validPriorities.includes(body.priority) ? body.priority : "Medium";
+
+    // Validate and sanitize inputs
+    const title = body.title ? String(body.title).slice(0, 255) : oldTask.title;
+    const description = body.description ? String(body.description).slice(0, 2000) : null;
+
     let completedAt = body.completedAt;
-    if (body.status === "Erledigt" && !completedAt) {
+    if (status === "Erledigt" && !completedAt) {
         completedAt = new Date();
-    } else if (body.status !== "Erledigt") {
+    } else if (status !== "Erledigt") {
         completedAt = null;
     }
 
     const updatedTask = await db
         .update(tasks)
         .set({
-            title: body.title,
+            title,
             companyId: body.companyId,
-            status: body.status,
-            priority: body.priority,
+            status,
+            priority,
             dueDate: body.dueDate ? new Date(body.dueDate) : null,
             followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
             assignedTo: body.assignedTo,
-            description: body.description,
+            description,
             completedAt: completedAt,
             updatedAt: new Date(),
         })

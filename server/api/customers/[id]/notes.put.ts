@@ -12,9 +12,13 @@ export default eventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: "Missing company ID" });
     }
 
+    // Auth check - require authenticated user
     const auth = createAuth(event);
     const session = await auth.api.getSession({ headers: event.headers });
-    const userId = session?.user?.id ?? null;
+    if (!session?.user) {
+        throw createError({ statusCode: 401, statusMessage: "Nicht autorisiert" });
+    }
+    const userId = session.user.id;
 
     const existing = await db.query.conversationNotes.findFirst({
         where: eq(conversationNotes.companyId, companyId),

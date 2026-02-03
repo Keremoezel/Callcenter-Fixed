@@ -39,14 +39,13 @@ export default eventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: "Invalid customer ID" });
     }
 
-    let userId: string | null = null;
-    try {
-        const auth = createAuth(event);
-        const session = await auth.api.getSession({ headers: event.headers });
-        userId = session?.user?.id ?? null;
-    } catch {
-        // Auth not configured (e.g. preview env) – continue without userId
+    // Auth check - require authenticated user
+    const auth = createAuth(event);
+    const session = await auth.api.getSession({ headers: event.headers });
+    if (!session?.user) {
+        throw createError({ statusCode: 401, statusMessage: "Nicht autorisiert" });
     }
+    const userId = session.user.id;
 
     const oldRow = await db.query.companies.findFirst({
         where: eq(companies.id, companyId),
@@ -130,11 +129,23 @@ export default eventHandler(async (event) => {
         description,
     };
     try {
+        // Collect all changes first, then batch insert (N+1 fix)
+        const changesToLog: Array<{
+            companyId: number;
+            entityType: string;
+            action: string;
+            label: string;
+            oldValue: string | null;
+            newValue: string | null;
+            userId: string;
+            createdAt: Date;
+        }> = [];
+
         for (const [field, label] of Object.entries(FIELD_LABELS)) {
             const oldVal = String((oldRow as Record<string, unknown>)[field] ?? "");
             const newVal = String(bodyMap[field] ?? "");
             if (oldVal !== newVal) {
-                await db.insert(companyChangeLog).values({
+                changesToLog.push({
                     companyId,
                     entityType: "company",
                     action: "updated",
@@ -145,6 +156,11 @@ export default eventHandler(async (event) => {
                     createdAt: new Date(),
                 });
             }
+        }
+
+        // Batch insert all changes at once
+        if (changesToLog.length > 0) {
+            await db.insert(companyChangeLog).values(changesToLog);
         }
     } catch (logErr) {
         // Change log insert failed (e.g. table missing on preview) – still return success

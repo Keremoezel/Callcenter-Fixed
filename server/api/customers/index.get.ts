@@ -1,6 +1,7 @@
 import { useDrizzle } from "../../utils/drizzle";
 import { assignments, teams, teamMembers, companies } from "../../database/schema";
 import { createAuth } from "../../lib/auth";
+import { getUserRole, type UserRole } from "../../utils/types";
 import { eq, inArray, or, and, sql, like } from "drizzle-orm";
 
 //unsere main customer api
@@ -19,7 +20,7 @@ export default eventHandler(async (event) => {
   }
 
   const currentUser = session.user;
-  const role = (currentUser as any).role;
+  const role: UserRole | undefined = getUserRole(currentUser);
   const db = useDrizzle(event);
 
   // Pagination params
@@ -46,19 +47,19 @@ export default eventHandler(async (event) => {
     let filterQuery = db.query.assignments.findMany({
       columns: { companyId: true },
     });
-    
+
     // Build where condition
     const filterConditions: any[] = [];
     if (filterAgent) filterConditions.push(eq(assignments.agentId, filterAgent));
     if (filterTeam) filterConditions.push(eq(assignments.teamId, parseInt(filterTeam)));
-    
+
     const filteredAssignments = await db.query.assignments.findMany({
       columns: { companyId: true },
       where: or(...filterConditions),
     });
-    
+
     filterCompanyIds = [...new Set(filteredAssignments.map(a => a.companyId))];
-    
+
     // If no companies match the filter, return empty
     if (filterCompanyIds.length === 0) {
       return {
@@ -70,7 +71,7 @@ export default eventHandler(async (event) => {
 
   // 2. Determine Visibility Scope and Task Filtering
   let allowedTaskAssignees: string[] | undefined = undefined; // For task filtering
-  
+
   if (role === "Admin") {
     // Admin sees ALL (allowedCompanyIds stays undefined = no filter)
     allowedCompanyIds = undefined;
@@ -114,7 +115,7 @@ export default eventHandler(async (event) => {
       .where(or(...whereConditions));
 
     allowedCompanyIds = relevantAssignments.map(a => a.companyId);
-    
+
     // Teamleads can see tasks assigned to them or their team members
     allowedTaskAssignees = [currentUser.id, ...memberIds];
 
@@ -125,7 +126,7 @@ export default eventHandler(async (event) => {
       .where(eq(assignments.agentId, currentUser.id));
 
     allowedCompanyIds = myAssignments.map(a => a.companyId);
-    
+
     // Agents can ONLY see their own tasks
     allowedTaskAssignees = [currentUser.id];
   }
@@ -145,10 +146,10 @@ export default eventHandler(async (event) => {
 
   // Build where conditions
   const whereConditions: any[] = [];
-  
+
   // Combine role-based visibility with filter-based visibility
   let finalAllowedIds = allowedCompanyIds;
-  
+
   if (filterCompanyIds) {
     if (allowedCompanyIds) {
       // Intersection: only show companies that match BOTH role AND filter
@@ -158,7 +159,7 @@ export default eventHandler(async (event) => {
       finalAllowedIds = filterCompanyIds;
     }
   }
-  
+
   // Apply final ID filter
   if (finalAllowedIds && finalAllowedIds.length > 0) {
     whereConditions.push(inArray(companies.id, finalAllowedIds));
@@ -169,27 +170,29 @@ export default eventHandler(async (event) => {
       pagination: { total: 0, page, limit, pages: 0 },
     };
   }
-  
+
   // Search filter (company name)
   if (searchQuery) {
-    whereConditions.push(like(companies.name, `%${searchQuery}%`));
+    // Escape LIKE special characters to prevent pattern attacks
+    const escapedSearch = searchQuery.replace(/[%_\\]/g, '\\$&');
+    whereConditions.push(like(companies.name, `%${escapedSearch}%`));
   }
-  
+
   // Project filter
   if (filterProject) {
     whereConditions.push(eq(companies.project, filterProject));
   }
-  
+
   // Status filter - Note: status field doesn't exist in schema yet
   // TODO: Add status field to companies table
   // if (filterStatus) {
   //   whereConditions.push(eq(companies.status, filterStatus));
   // }
-  
+
   // Helper function for date filtering
   const getDateFilter = (dateValue: string) => {
     const now = new Date();
-    
+
     if (dateValue === 'today') {
       return new Date(now.getFullYear(), now.getMonth(), now.getDate());
     } else if (dateValue === 'week') {
@@ -202,13 +205,13 @@ export default eventHandler(async (event) => {
     }
     return new Date(0);
   };
-  
+
   // Upload date filter (createdAt)
   if (filterDate) {
     const startDate = getDateFilter(filterDate);
     whereConditions.push(sql`${companies.createdAt} >= ${startDate.toISOString()}`);
   }
-  
+
   // Assigned date filter (need to check assignments table)
   if (filterAssignedDate) {
     const startDate = getDateFilter(filterAssignedDate);
@@ -217,7 +220,7 @@ export default eventHandler(async (event) => {
       where: sql`${assignments.assignedAt} >= ${startDate.toISOString()}`,
     });
     const assignedCompanyIds = [...new Set(recentAssignments.map(a => a.companyId))];
-    
+
     if (assignedCompanyIds.length > 0) {
       // Intersect with existing filterCompanyIds
       if (filterCompanyIds) {
@@ -233,76 +236,28 @@ export default eventHandler(async (event) => {
       };
     }
   }
-  
+
   // Last activity filter (tasks or notes)
-  if (filterLastActivity) {
-    // For "older" filter, we want companies with NO recent activity
-    if (filterLastActivity === 'older') {
-      const oneMonthAgo = new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000);
-      // This is complex - would need to check both tasks and conversation notes
-      // For now, we'll filter on tasks only
-      // Note: Simplified query - in production would need proper join
-      // For now, skip this complex filter
-      // const recentTaskCompanies = await db
-      //   .selectDistinct({ companyId: sql`${companies.id}` })
-      //   .from(companies)
-      //   .leftJoin(sql`tasks`, sql`tasks.company_id = ${companies.id}`)
-      //   .where(sql`tasks.created_at >= ${oneMonthAgo.toISOString()}`);
-      
-      const recentTaskCompanies: any[] = [];
-      
-      const activeIds = recentTaskCompanies.map((r: any) => r.companyId);
-      
-      // We want companies NOT in this list
-      if (filterCompanyIds) {
-        filterCompanyIds = filterCompanyIds.filter(id => !activeIds.includes(id));
-      } else if (finalAllowedIds) {
-        filterCompanyIds = finalAllowedIds.filter(id => !activeIds.includes(id));
-      }
-    } else {
-      // Recent activity filter
-      const startDate = getDateFilter(filterLastActivity);
-      // Similar logic for recent activity
-      // Simplified: just use task creation dates
-      // Note: Complex query - simplified for now
-      // const activeCompanies = await db
-      //   .selectDistinct({ companyId: sql`${companies.id}` })
-      //   .from(companies)
-      //   .leftJoin(sql`tasks`, sql`tasks.company_id = ${companies.id}`)
-      //   .where(sql`tasks.created_at >= ${startDate.toISOString()}`);
-      
-      const activeCompanies: any[] = [];
-      
-      const activeIds = activeCompanies.map((r: any) => r.companyId);
-      
-      if (activeIds.length > 0) {
-        if (filterCompanyIds) {
-          filterCompanyIds = filterCompanyIds.filter(id => activeIds.includes(id));
-        } else {
-          filterCompanyIds = activeIds;
-        }
-      } else {
-        return {
-          data: [],
-          pagination: { total: 0, page, limit, pages: 0 },
-        };
-      }
-    }
-  }
-  
-  const whereClause = whereConditions.length > 1 
-    ? and(...whereConditions) 
-    : whereConditions.length === 1 
-      ? whereConditions[0] 
+  // TODO: Implement lastActivity filter - requires proper join query on tasks/activities tables
+  // Currently disabled as the previous implementation was non-functional (empty array results)
+  // if (filterLastActivity) {
+  //   // Implementation needed: query tasks/activities joined with companies
+  // }
+
+
+  const whereClause = whereConditions.length > 1
+    ? and(...whereConditions)
+    : whereConditions.length === 1
+      ? whereConditions[0]
       : undefined;
-  
+
   // Count total matching companies
   let totalQuery = (db as any).select({ count: sql<number>`count(*)` }).from(companies);
   if (whereClause) {
     totalQuery = totalQuery.where(whereClause);
   }
   const [totalResult] = await totalQuery;
-  
+
   const total = Number(totalResult?.count) || 0;
   const totalPages = Math.ceil(total / limit);
 
@@ -321,10 +276,10 @@ export default eventHandler(async (event) => {
       // 3. 'conversationNotes'-Beziehung laden
       conversationNotes: true,
 
-      // 4. 'assignments'-Beziehung laden (ALLE Assignments für Historie)
+      // 4. 'assignments'-Beziehung laden (Latest 10 for history, not ALL)
       assignments: {
         orderBy: (assignments, { desc }) => [desc(assignments.assignedAt)],
-        // KEIN limit mehr - wir holen alle Assignments
+        limit: 10, // Performance: Only load recent 10 assignments per customer
 
         // 5. Und die verschachtelte 'agent' (Benutzer)-Beziehung innerhalb der Zuweisung laden
         with: {
@@ -385,7 +340,7 @@ export default eventHandler(async (event) => {
       assignedAgentName: assignedAgents.length > 0 ? assignedAgents.join(", ") : null,
       assignedAgents: assignedAgents, // Alle Agents als Array
       assignedTeamId: latestAssignment?.teamId || null,
-      
+
       // Alle Assignments für Zuweisungshistorie
       allAssignments: assignments.map(a => ({
         id: a.id,

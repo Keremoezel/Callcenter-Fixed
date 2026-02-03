@@ -7,13 +7,11 @@ import { sql } from "drizzle-orm";
  * URL: http://127.0.0.1:8787/api/dev/reset-all-tables
  */
 export default eventHandler(async (event) => {
-  // ⚠️ SECURITY: Only allow in development
-  const isDev = process.env.NODE_ENV === 'true' || !process.env.CF_PAGES;
-  
-  if (!isDev) {
+  // Production environment check for safety
+  if (process.env.NODE_ENV === 'production') {
     throw createError({
       statusCode: 403,
-      statusMessage: "This endpoint is only available in development!",
+      statusMessage: "This endpoint is disabled in production"
     });
   }
 

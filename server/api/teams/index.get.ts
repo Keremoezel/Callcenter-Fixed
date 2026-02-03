@@ -1,6 +1,7 @@
 import { useDrizzle } from "../../utils/drizzle";
 import { teams } from "../../database/schema";
 import { createAuth } from "../../lib/auth";
+import { getUserRole, type UserRole } from "../../utils/types";
 import { eq, asc } from "drizzle-orm";
 
 export default eventHandler(async (event) => {
@@ -16,7 +17,7 @@ export default eventHandler(async (event) => {
     }
 
     const currentUser = session.user;
-    const role = (currentUser as any).role;
+    const role: UserRole | undefined = getUserRole(currentUser);
     const db = useDrizzle(event);
 
     // 2. Logic based on Role

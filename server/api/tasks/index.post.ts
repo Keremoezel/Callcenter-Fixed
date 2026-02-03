@@ -1,7 +1,16 @@
 import { useDrizzle } from "../../utils/drizzle";
 import { tasks } from "../../database/schema";
+import { createAuth } from "../../lib/auth";
 
 export default eventHandler(async (event) => {
+    // Auth check - require authenticated user
+    const auth = createAuth(event);
+    const session = await auth.api.getSession({ headers: event.headers });
+    if (!session?.user) {
+        throw createError({ statusCode: 401, statusMessage: "Nicht autorisiert" });
+    }
+    const currentUser = session.user;
+
     const body = await readBody(event);
     const db = useDrizzle(event);
 
@@ -9,28 +18,31 @@ export default eventHandler(async (event) => {
     if (!body.title || !body.companyId) {
         throw createError({
             statusCode: 400,
-            message: "Title and Company are required"
+            message: "Titel und Firma sind erforderlich"
         });
     }
 
-    // TODO: Get current user from session
-    // const user = event.context.user;
-    // For now, we'll assume the body contains the necessary IDs or handle it in the frontend
-    // In a real app, we would validate permissions here:
-    // if (user.role === 'Agent' && body.assignedTo !== user.id) {
-    //   throw createError({ statusCode: 403, message: "Agents can only assign tasks to themselves" });
-    // }
+    // Validate enum values (security: prevent arbitrary values)
+    const validStatuses = ["Open", "In Progress", "Erledigt", "Cancelled"];
+    const validPriorities = ["Low", "Medium", "High"];
+
+    const status = validStatuses.includes(body.status) ? body.status : "Open";
+    const priority = validPriorities.includes(body.priority) ? body.priority : "Medium";
+
+    // Validate and sanitize inputs
+    const title = String(body.title).slice(0, 255); // Limit length
+    const description = body.description ? String(body.description).slice(0, 2000) : null;
 
     const newTask = await db.insert(tasks).values({
-        title: body.title,
-        companyId: body.companyId,
-        status: body.status || "Open",
-        priority: body.priority || "Medium",
+        title,
+        companyId: parseInt(body.companyId, 10),
+        status,
+        priority,
         dueDate: body.dueDate ? new Date(body.dueDate) : null,
         followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
         assignedTo: body.assignedTo || null,
-        assignedBy: body.assignedBy || null,
-        description: body.description || null,
+        assignedBy: currentUser.id, // Use authenticated user, not body input
+        description,
     }).returning();
 
     return newTask[0];

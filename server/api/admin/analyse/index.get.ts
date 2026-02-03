@@ -60,9 +60,9 @@ export default eventHandler(async (event) => {
             const memberRecords = await db.query.teamMembers.findMany({
                 where: inArray(teamMembers.teamId, myTeamIds)
             });
-            
+
             allowedAgentIds = memberRecords.map(m => m.userId);
-            
+
             if (!allowedAgentIds.includes(currentUser.id)) {
                 allowedAgentIds.push(currentUser.id);
             }
@@ -71,22 +71,22 @@ export default eventHandler(async (event) => {
 
     // 4. Get all agents (or filtered agents)
     let allAgents;
-    
+
     if (filterTeamId && role === "Admin") {
         const teamMemberRecords = await db.query.teamMembers.findMany({
             where: eq(teamMembers.teamId, filterTeamId)
         });
         const teamAgentIds = teamMemberRecords.map(m => m.userId);
-        
+
         if (teamAgentIds.length === 0) {
             return {
                 data: [],
                 pagination: { total: 0, page, limit, pages: 0 }
             };
         }
-        
+
         allAgents = await db.query.users.findMany({
-            where: allowedAgentIds 
+            where: allowedAgentIds
                 ? and(inArray(users.id, allowedAgentIds), inArray(users.id, teamAgentIds))
                 : inArray(users.id, teamAgentIds),
             columns: {
@@ -128,7 +128,7 @@ export default eventHandler(async (event) => {
     const paginatedAgentIds = paginatedAgents.map(a => a.id);
 
     // 5. **FIX N+1: Fetch ALL data in bulk queries**
-    
+
     // Bulk fetch team memberships for all agents
     const allTeamMemberships = await db.query.teamMembers.findMany({
         where: inArray(teamMembers.userId, paginatedAgentIds),
@@ -175,15 +175,17 @@ export default eventHandler(async (event) => {
     // Get all company IDs
     const allCompanyIds = [...new Set(allAssignments.map(a => a.companyId))];
 
-    
-    const SQL_VAR_LIMIT = 400;
-    const maxCompanyIdsPerChunk = Math.max(1, SQL_VAR_LIMIT - paginatedAgentIds.length);
+
+    // D1 has a strict parameter limit (~100 params). Be conservative.
+    const SQL_VAR_LIMIT = 50;
+    const maxCompanyIdsPerChunk = Math.max(1, SQL_VAR_LIMIT - paginatedAgentIds.length - 5); // Extra buffer
     const chunk = <T>(arr: T[], size: number): T[][] => {
+        if (size <= 0) size = 1;
         const out: T[][] = [];
         for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
         return out;
     };
-    const companyIdChunks = chunk(allCompanyIds, maxCompanyIdsPerChunk);
+    const companyIdChunks = allCompanyIds.length > 0 ? chunk(allCompanyIds, maxCompanyIdsPerChunk) : [];
 
     // Bulk fetch tasks for all companies and agents (in chunks)
     type TaskRow = { assignedTo: string | null; status: string; companyId: number; createdAt: Date };
@@ -259,7 +261,7 @@ export default eventHandler(async (event) => {
         // Count tasks by status
         const statusBreakdown: Record<string, number> = {};
         let nichtAngefasst = 0;
-        
+
         agentTasks.forEach(task => {
             statusBreakdown[task.status] = (statusBreakdown[task.status] || 0) + 1;
             if (task.status === "Nicht angefasst") {
@@ -286,20 +288,20 @@ export default eventHandler(async (event) => {
 
         // Calculate average time to first contact (in hours)
         let avgTimeToContact: number | null = null;
-        
+
         if (agentAssignments.length > 0 && agentActivities.length > 0) {
             const timeDiffs: number[] = [];
-            
+
             agentAssignments.forEach(assignment => {
                 const firstActivity = agentActivities
                     .filter(a => a.companyId === assignment.companyId)
                     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
-                
+
                 if (firstActivity) {
                     const assignedTime = new Date(assignment.assignedAt).getTime();
                     const contactTime = new Date(firstActivity.createdAt).getTime();
                     const diffHours = (contactTime - assignedTime) / (1000 * 60 * 60);
-                    
+
                     if (diffHours >= 0) {
                         timeDiffs.push(diffHours);
                     }
@@ -313,9 +315,9 @@ export default eventHandler(async (event) => {
 
         // Get most recent assignment date
         const recentAssignment = agentAssignments.length > 0
-            ? agentAssignments.reduce((latest, current) => 
+            ? agentAssignments.reduce((latest, current) =>
                 new Date(current.assignedAt) > new Date(latest.assignedAt) ? current : latest
-              ).assignedAt.toISOString()
+            ).assignedAt.toISOString()
             : null;
 
         const totalTasks = agentTasks.length;

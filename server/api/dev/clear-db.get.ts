@@ -11,13 +11,13 @@ import { useDrizzle, sql } from "../../utils/drizzle";
  * ⚠️ WARNING: Consider disabling this endpoint in production!
  */
 export default eventHandler(async (event) => {
-    // Optional: Add environment check for extra safety
-    // if (process.env.NODE_ENV === 'production') {
-    //   throw createError({
-    //     statusCode: 403,
-    //     statusMessage: "This endpoint is disabled in production"
-    //   });
-    // }
+    // Production environment check for safety
+    if (process.env.NODE_ENV === 'production') {
+        throw createError({
+            statusCode: 403,
+            statusMessage: "This endpoint is disabled in production"
+        });
+    }
 
     const db = useDrizzle(event);
 

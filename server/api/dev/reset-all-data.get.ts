@@ -19,13 +19,11 @@ import {
  * URL: http://127.0.0.1:8787/api/dev/reset-all-data
  */
 export default eventHandler(async (event) => {
-  // ⚠️ SECURITY: Only allow in development
-  const isDev = process.env.NODE_ENV === 'true' || !process.env.CF_PAGES;
-  
-  if (!isDev) {
+  // Production environment check for safety
+  if (process.env.NODE_ENV === 'production') {
     throw createError({
       statusCode: 403,
-      statusMessage: "This endpoint is only available in development!",
+      statusMessage: "This endpoint is disabled in production"
     });
   }
 
@@ -41,10 +39,10 @@ export default eventHandler(async (event) => {
     await db.delete(conversationNotes);
     await db.delete(contacts);
     await db.delete(companies);
-    
+
     await db.delete(teamMembers);
     await db.delete(teams);
-    
+
     await db.delete(sessions);
     await db.delete(account);
     await db.delete(verification);
