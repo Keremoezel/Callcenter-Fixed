@@ -3,18 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/run-migration.js server/database/migrations/0007_import_logs.sql",
-    "migrate": "powershell -Command \"$branch = git rev-parse --abbrev-ref HEAD; if ($branch -eq 'main') { npx wrangler d1 migrations apply DB --remote } else { npx wrangler d1 migrations apply DB --remote --env preview }\"",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "dev:wrangler": "wrangler dev",
     "generate": "nuxt generate",
     "db:studio": "drizzle-kit studio",
-    "preview": "wrangler dev",
-    "deploy": "nuxt build && wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node scripts/run-migration.js server/database/migrations/0007_import_logs.sql",
     "postinstall": "nuxt prepare",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "migrate": "powershell -Command \"$branch = git rev-parse --abbrev-ref HEAD; if ($branch -eq 'main') { Write-Host 'Migrating PRODUCTION DB...' -ForegroundColor Red; npx wrangler d1 migrations apply DB --remote } else { Write-Host 'Migrating PREVIEW DB...' -ForegroundColor Cyan; npx wrangler d1 migrations apply DB --remote --env preview }\"",
+    "deploy": "nuxt build && powershell -Command \"$branch = git rev-parse --abbrev-ref HEAD; if ($branch -eq 'main') { Write-Host 'Deploying to PRODUCTION...' -ForegroundColor Red; npx wrangler deploy --config wrangler.json } else { Write-Host 'Deploying to PREVIEW...' -ForegroundColor Cyan; npx wrangler deploy --env preview --config wrangler.json }\"",
+    "preview": "powershell -Command \"$branch = git rev-parse --abbrev-ref HEAD; if ($branch -eq 'main') { npx wrangler dev --remote } else { npx wrangler dev --env preview --remote }\""
   },
   "dependencies": {
     "@heroicons/vue": "^2.2.0",

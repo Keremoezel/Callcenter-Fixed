@@ -1,11 +1,11 @@
 {
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "crm-final",
   "main": "./.output/server/index.mjs",
   "compatibility_date": "2026-01-28",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": "./.output/public/",
     "binding": "STATIC_ASSETS"
@@ -26,7 +26,6 @@
   ],
   "env": {
     "preview": {
-      "name": "crm-final-preview",
       "vars": {
         "BETTER_AUTH_URL": "https://preview.crm-final.keremoezel.workers.dev"
       },
