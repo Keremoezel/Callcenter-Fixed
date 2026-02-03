@@ -40,8 +40,9 @@ const navGroups = computed(() => [
     items: [
       { to: "/admin/users", label: "Benutzerverwaltung", icon: "users" },
       { to: "/admin/analyse", label: "Agent Analyse", icon: "chart" },
+      { to: "/admin/import-log", label: "Import Log", icon: "clipboard" },
     ],
-    show: hasRole("Admin") || hasRole("Teamlead"),
+    show: hasRole("Admin"),
   },
   {
     title: "Hilfe & Support",

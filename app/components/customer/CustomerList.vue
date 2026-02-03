@@ -427,10 +427,10 @@
       <div
         v-if="isImportModalOpen"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        @click.self="closeImportModal"
+        @click.self="isImporting ? null : closeImportModal()"
       >
         <div
-          class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto relative"
           @click.stop
         >
           <!-- Header -->
@@ -438,7 +438,13 @@
             <h3 class="text-lg font-semibold text-gray-900">Excel Import</h3>
             <button
               @click="closeImportModal"
-              class="text-gray-400 hover:text-gray-600 transition-colors"
+              :disabled="isImporting"
+              :class="[
+                'transition-colors',
+                isImporting
+                  ? 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-400 hover:text-gray-600'
+              ]"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -458,7 +464,13 @@
                 type="file"
                 accept=".xlsx, .xls"
                 @change="handleFileSelect"
-                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none p-2"
+                :disabled="isImporting"
+                :class="[
+                  'block w-full text-sm text-gray-900 border rounded-lg focus:outline-none p-2',
+                  isImporting
+                    ? 'border-gray-200 bg-gray-100 cursor-not-allowed'
+                    : 'border-gray-300 bg-gray-50 cursor-pointer'
+                ]"
               />
               <p v-if="selectedFile" class="mt-1 text-xs text-green-600">
                 ✓ {{ selectedFile.name }}
@@ -472,7 +484,13 @@
               </label>
               <select
                 v-model="selectedTeamId"
-                class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :disabled="isImporting"
+                :class="[
+                  'block w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                  isImporting
+                    ? 'border-gray-200 bg-gray-100 cursor-not-allowed'
+                    : 'border-gray-300'
+                ]"
               >
                 <option value="">-- Kein Team --</option>
                 <option v-for="team in teams" :key="team.id" :value="team.id">
@@ -488,7 +506,13 @@
               </label>
               <select
                 v-model="selectedAgentId"
-                class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                :disabled="isImporting"
+                :class="[
+                  'block w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                  isImporting
+                    ? 'border-gray-200 bg-gray-100 cursor-not-allowed'
+                    : 'border-gray-300'
+                ]"
               >
                 <option value="">-- Kein Agent --</option>
                 <option v-for="assignableUser in users" :key="assignableUser.id" :value="assignableUser.id">
@@ -497,13 +521,73 @@
               </select>
             </div>
 
+            <!-- Project Name (Optional, overrides Excel column) -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Projektname (optional)
+              </label>
+              <input
+                v-model="selectedProjectName"
+                :disabled="isImporting"
+                type="text"
+                placeholder="Projektname für alle importierten Kunden"
+                :class="[
+                  'block w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                  isImporting
+                    ? 'border-gray-200 bg-gray-100 cursor-not-allowed'
+                    : 'border-gray-300'
+                ]"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                Wenn gesetzt, wird dieser Projektname für alle Zeilen verwendet (Excel-Spalte „Projekt“ wird überschrieben).
+              </p>
+            </div>
+
+            <!-- Loading State - Full Screen Overlay -->
+            <div v-if="isImporting" class="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-10 rounded-lg">
+              <div class="text-center p-8">
+                <svg
+                  class="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Import läuft...</h3>
+                <p class="text-sm text-gray-600 mb-1">
+                  Die Kunden werden gerade importiert.
+                </p>
+                <p class="text-xs text-gray-500">
+                  Bitte warten Sie, dies kann einige Zeit dauern.
+                </p>
+                <div class="mt-4 flex items-center justify-center gap-2">
+                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  <div class="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                </div>
+              </div>
+            </div>
+
             <!-- Error Message -->
-            <div v-if="importError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div v-if="importError && !isImporting" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p class="text-sm text-red-600">{{ importError }}</p>
             </div>
 
             <!-- Info Text -->
-            <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div v-if="!isImporting" class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p class="text-xs text-blue-700">
                 <strong>Hinweis:</strong> Wenn Sie kein Team oder Agent auswählen, werden die Kunden als "Neu Importiert" markiert.
               </p>
@@ -514,21 +598,48 @@
           <div class="flex gap-3 justify-end p-6 border-t border-gray-200 bg-gray-50">
             <button
               @click="closeImportModal"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              :disabled="isImporting"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                isImporting
+                  ? 'text-gray-400 bg-white border border-gray-300 cursor-not-allowed'
+                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+              ]"
             >
               Abbrechen
             </button>
             <button
               @click="handleImportConfirm"
-              :disabled="!selectedFile"
+              :disabled="!selectedFile || isImporting"
               :class="[
-                'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors',
-                selectedFile
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-gray-400 cursor-not-allowed'
+                'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
+                (!selectedFile || isImporting)
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
               ]"
             >
-              Importieren
+              <svg
+                v-if="isImporting"
+                class="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>{{ isImporting ? 'Importiere...' : 'Importieren' }}</span>
             </button>
           </div>
         </div>
@@ -538,7 +649,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Customer } from '~/composables/customers/useCustomers'
 import { getStatusColor } from '~/utils/status'
 import { useAuth } from '~/composables/auth/useAuth'
@@ -549,11 +660,12 @@ const props = defineProps<{
   pagination?: { total: number; page: number; limit: number; pages: number }
   currentPage?: number
   loading?: boolean
+  isImporting?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'select', customer: Customer): void
-  (e: 'import', data: any[], targetTeamId?: string, targetAgentId?: string): void
+  (e: 'import', data: any[], targetTeamId?: string, targetAgentId?: string, projectName?: string): void
   (e: 'page-change', page: number): void
   (e: 'filter-change', filters: { 
     search: string;
@@ -565,6 +677,7 @@ const emit = defineEmits<{
     lastActivity: string;
     date: string;
   }): void
+  (e: 'import-complete'): void
 }>()
 
 // Auth
@@ -591,6 +704,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const selectedTeamId = ref<string>('')
 const selectedAgentId = ref<string>('')
+const selectedProjectName = ref<string>('')
 const importError = ref<string>('')
 
 // ============================================
@@ -756,11 +870,17 @@ const handleImportConfirm = async () => {
       
       console.log('Excel Import Raw Data:', jsonData)
       
-      // Emit with optional team and agent IDs
-      emit('import', jsonData, selectedTeamId.value || undefined, selectedAgentId.value || undefined)
+      // Emit with optional team, agent and project name
+      // Modal will stay open and show loading state until import completes
+      emit(
+        'import',
+        jsonData,
+        selectedTeamId.value || undefined,
+        selectedAgentId.value || undefined,
+        selectedProjectName.value || undefined
+      )
       
-      // Close modal and reset
-      closeImportModal()
+      // Don't close modal here - let parent handle it after import completes
     } catch (error) {
       console.error('Error parsing Excel file:', error)
       importError.value = 'Fehler beim Lesen der Excel-Datei.'
@@ -770,6 +890,10 @@ const handleImportConfirm = async () => {
 }
 
 const closeImportModal = () => {
+  // Don't close modal if import is in progress
+  if (props.isImporting) {
+    return
+  }
   isImportModalOpen.value = false
   selectedFile.value = null
   selectedTeamId.value = ''
@@ -779,6 +903,17 @@ const closeImportModal = () => {
     fileInput.value.value = ''
   }
 }
+
+// Watch for import completion to close modal
+watch(() => props.isImporting, (newVal, oldVal) => {
+  // When import finishes (changes from true to false), close the modal
+  if (oldVal === true && newVal === false) {
+    // Small delay to show completion state
+    setTimeout(() => {
+      closeImportModal()
+    }, 500)
+  }
+})
 
 const downloadSample = () => {
   window.location.href = '/api/customers/sample-excel'

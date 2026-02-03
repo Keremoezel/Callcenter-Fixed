@@ -175,24 +175,39 @@ export default eventHandler(async (event) => {
     // Get all company IDs
     const allCompanyIds = [...new Set(allAssignments.map(a => a.companyId))];
 
-    // Bulk fetch tasks for all companies and agents
-    const allTasks = allCompanyIds.length > 0
-        ? await db.query.tasks.findMany({
-            where: and(
-                inArray(tasks.assignedTo, paginatedAgentIds),
-                inArray(tasks.companyId, allCompanyIds)
-            ),
-            columns: {
-                assignedTo: true,
-                status: true,
-                companyId: true,
-                createdAt: true,
-            }
-        })
-        : [];
+    
+    const SQL_VAR_LIMIT = 400;
+    const maxCompanyIdsPerChunk = Math.max(1, SQL_VAR_LIMIT - paginatedAgentIds.length);
+    const chunk = <T>(arr: T[], size: number): T[][] => {
+        const out: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
+    };
+    const companyIdChunks = chunk(allCompanyIds, maxCompanyIdsPerChunk);
+
+    // Bulk fetch tasks for all companies and agents (in chunks)
+    type TaskRow = { assignedTo: string | null; status: string; companyId: number; createdAt: Date };
+    let allTasks: TaskRow[] = [];
+    if (allCompanyIds.length > 0) {
+        for (const companyIds of companyIdChunks) {
+            const rows = await db.query.tasks.findMany({
+                where: and(
+                    inArray(tasks.assignedTo, paginatedAgentIds),
+                    inArray(tasks.companyId, companyIds)
+                ),
+                columns: {
+                    assignedTo: true,
+                    status: true,
+                    companyId: true,
+                    createdAt: true,
+                }
+            });
+            allTasks = allTasks.concat(rows);
+        }
+    }
 
     // Group tasks by agent
-    const tasksByAgent = new Map<string, typeof allTasks>();
+    const tasksByAgent = new Map<string, TaskRow[]>();
     allTasks.forEach(task => {
         const assignedTo = task.assignedTo;
         if (assignedTo == null) return;
@@ -202,24 +217,29 @@ export default eventHandler(async (event) => {
         tasksByAgent.get(assignedTo)!.push(task);
     });
 
-    // Bulk fetch activities for all companies and agents
-    const allActivities = allCompanyIds.length > 0
-        ? await db.query.activities.findMany({
-            where: and(
-                inArray(activities.userId, paginatedAgentIds),
-                inArray(activities.companyId, allCompanyIds)
-            ),
-            columns: {
-                userId: true,
-                type: true,
-                companyId: true,
-                createdAt: true,
-            }
-        })
-        : [];
+    // Bulk fetch activities for all companies and agents (in chunks)
+    type ActivityRow = { userId: string; type: string; companyId: number; createdAt: Date };
+    let allActivities: ActivityRow[] = [];
+    if (allCompanyIds.length > 0) {
+        for (const companyIds of companyIdChunks) {
+            const rows = await db.query.activities.findMany({
+                where: and(
+                    inArray(activities.userId, paginatedAgentIds),
+                    inArray(activities.companyId, companyIds)
+                ),
+                columns: {
+                    userId: true,
+                    type: true,
+                    companyId: true,
+                    createdAt: true,
+                }
+            });
+            allActivities = allActivities.concat(rows);
+        }
+    }
 
     // Group activities by agent
-    const activitiesByAgent = new Map<string, typeof allActivities>();
+    const activitiesByAgent = new Map<string, ActivityRow[]>();
     allActivities.forEach(activity => {
         if (!activitiesByAgent.has(activity.userId)) {
             activitiesByAgent.set(activity.userId, []);

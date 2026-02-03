@@ -60,6 +60,14 @@
         />
       </div>
       <div>
+        <label class="text-xs text-gray-500">Nachname</label>
+        <UInput
+          v-model="contact.lastName"
+          size="sm"
+          placeholder="Nachname eingeben"
+        />
+      </div>
+      <div>
         <label class="text-xs text-gray-500">Mail</label>
         <UInput
           v-model="contact.email"
@@ -75,6 +83,10 @@
           placeholder="Telefonnummer eingeben"
         />
       </div>
+    </div>
+
+    <!-- Position: separate row to keep layout clean -->
+    <div class="grid grid-cols-4 gap-4 mt-3">
       <div>
         <label class="text-xs text-gray-500">Position</label>
         <UInput

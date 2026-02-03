@@ -23,3 +23,16 @@ logs
 .env
 .env.*
 !.env.example
+.dev.vars
+
+# Personal/private markdown files (keep README.md and API_ENDPOINTS.md)
+NOTES.md
+TODO.md
+PERSONAL.md
+*.private.md
+
+# Helper documentation folder
+helper md/
+
+# Helper documentation folder
+helper md/

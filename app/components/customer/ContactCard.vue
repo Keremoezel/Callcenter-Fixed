@@ -20,7 +20,7 @@
           {{ contact.isPrimary ? "✓ Primär" : `Kontakt ${index + 1}` }}
         </span>
         <h4 class="font-bold text-gray-800">
-          {{ contact.firstName }}
+          {{ contact.firstName }} {{ contact.lastName || "" }}
         </h4>
       </div>
       <div class="flex space-x-2">
@@ -44,25 +44,25 @@
     <!-- Main Contact Info: 4 columns -->
     <div class="grid grid-cols-4 gap-4">
       <div>
-        <label class="text-xs text-gray-500">Vorname</label>
+        <label class="text-xs text-gray-500">Name</label>
         <p class="font-bold text-sm text-gray-800">
-          {{ contact.firstName }}
+          {{ contact.firstName }} {{ contact.lastName || "" }}
         </p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Mail</label>
-        <p class="font-bold text-sm text-gray-800">
-          {{ contact.email }}
+        <p class="font-bold text-sm text-gray-800 break-words whitespace-normal">
+          {{ contact.email || "-" }}
         </p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Telefonnummer</label>
         <p class="font-bold text-sm text-gray-800">
-          {{ contact.phoneNumber }}
+          {{ contact.phoneNumber || "-" }}
         </p>
       </div>
       <div>
-        <label class="text-xs text-gray-500">Position</label>
+        <label class="text-xs text-gray-500">Position-Tätigkeit</label>
         <p class="font-bold text-sm text-gray-800">
           {{ contact.position || "-" }}
         </p>
@@ -119,9 +119,9 @@
     </div>
 
     <!-- Notizen Section: Full width -->
-    <div class="mt-3 pt-3 border-t border-gray-200">
+    <div class="mt-3 pt-3 border-t border-gray-200 max-w-full overflow-x-hidden">
       <label class="text-xs text-gray-500">Notizen</label>
-      <p class="text-sm text-gray-700 mt-1">
+      <p class="text-sm text-gray-700 mt-1 whitespace-pre-wrap break-all">
         {{ contact.notizen || "-" }}
       </p>
     </div>

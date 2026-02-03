@@ -403,3 +403,45 @@ export const companyChangeLogRelations = relations(companyChangeLog, ({ one }) =
   company: one(companies, { fields: [companyChangeLog.companyId], references: [companies.id] }),
   user: one(users, { fields: [companyChangeLog.userId], references: [users.id] }),
 }));
+
+/**
+ * IMPORT LOGS
+ * (Excel Import History for Admin)
+ */
+export const importLogs = sqliteTable("import_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  importedBy: text("imported_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "set null" }),
+  projectName: text("project_name"), // Manual project name entered during import
+  targetTeamId: integer("target_team_id").references(() => teams.id, {
+    onDelete: "set null",
+  }),
+  targetAgentId: text("target_agent_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  totalRows: integer("total_rows").notNull(), // Number of rows in Excel
+  successCount: integer("success_count").notNull().default(0),
+  failedCount: integer("failed_count").notNull().default(0),
+  createdCount: integer("created_count").notNull().default(0),
+  updatedCount: integer("updated_count").notNull().default(0),
+  assignedCount: integer("assigned_count").notNull().default(0), // New assignments
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const importLogsRelations = relations(importLogs, ({ one }) => ({
+  importedByUser: one(users, {
+    fields: [importLogs.importedBy],
+    references: [users.id],
+  }),
+  targetTeam: one(teams, {
+    fields: [importLogs.targetTeamId],
+    references: [teams.id],
+  }),
+  targetAgent: one(users, {
+    fields: [importLogs.targetAgentId],
+    references: [users.id],
+  }),
+}));

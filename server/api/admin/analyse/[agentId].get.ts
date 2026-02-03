@@ -147,29 +147,52 @@ export default eventHandler(async (event) => {
         };
     }
 
-    // **Fetch ALL data in parallel** (nur Statusänderungen in Timeline, keine Aktivitäten)
-    const [companiesData, agentTasks, assigners] = await Promise.all([
-        db.query.companies.findMany({
-            where: inArray(companies.id, companyIds),
-            columns: { id: true, name: true },
-        }),
-        // Tasks: fetch ALL for agent's companies (no date filter); we filter by date when building timeline
-        db.query.tasks.findMany({
-            where: and(
-                eq(tasks.assignedTo, agentId),
-                inArray(tasks.companyId, companyIds)
-            ),
-            columns: {
-                id: true,
-                title: true,
-                companyId: true,
-                status: true,
-                assignedBy: true,
-                updatedAt: true,
-                createdAt: true,
+    // D1/SQLite bind limit; chunk companyIds to avoid "too many SQL variables"
+    const MAX_IN_CLAUSE = 400;
+    const chunk = <T>(arr: T[], size: number): T[][] => {
+        const out: T[][] = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
+    };
+    const companyIdChunks = chunk(companyIds, MAX_IN_CLAUSE);
+
+    // **Fetch ALL data** (companies + tasks in chunks; assigners once)
+    type CompanyRow = { id: number; name: string };
+    type TaskRow = { id: number; title: string; companyId: number; status: string; assignedBy: string | null; updatedAt: Date | null; createdAt: Date };
+    const [companiesData, agentTasksArrays, assigners] = await Promise.all([
+        (async (): Promise<CompanyRow[]> => {
+            const all: CompanyRow[] = [];
+            for (const ids of companyIdChunks) {
+                const rows = await db.query.companies.findMany({
+                    where: inArray(companies.id, ids),
+                    columns: { id: true, name: true },
+                });
+                all.push(...rows);
             }
-        }),
-        // Assigners (für status_change „von …“)
+            return all;
+        })(),
+        (async (): Promise<TaskRow[]> => {
+            const all: TaskRow[] = [];
+            for (const ids of companyIdChunks) {
+                const rows = await db.query.tasks.findMany({
+                    where: and(
+                        eq(tasks.assignedTo, agentId),
+                        inArray(tasks.companyId, ids)
+                    ),
+                    columns: {
+                        id: true,
+                        title: true,
+                        companyId: true,
+                        status: true,
+                        assignedBy: true,
+                        updatedAt: true,
+                        createdAt: true,
+                    }
+                });
+                all.push(...rows);
+            }
+            return all;
+        })(),
         assignerIds.length > 0
             ? db.query.users.findMany({
                 where: inArray(users.id, assignerIds),
@@ -177,6 +200,7 @@ export default eventHandler(async (event) => {
             })
             : Promise.resolve([])
     ]);
+    const agentTasks = agentTasksArrays;
 
     // Build lookup maps
     const companyNamesMap: Record<number, string> = {};

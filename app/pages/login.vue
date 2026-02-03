@@ -61,7 +61,7 @@ async function handleSubmit() {
       <div class="w-full max-w-md space-y-8">
         <!-- Mobile Header (Visible only on small screens) -->
         <div class="lg:hidden text-center mb-8">
-           <h1 class="text-3xl font-bold text-winered-900 dark:text-white">CRM Premium</h1>
+           <h1 class="text-3xl font-bold text-winered-900 dark:text-white">CRM</h1>
         </div>
       
         <div class="text-center lg:text-left">

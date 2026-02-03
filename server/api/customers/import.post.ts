@@ -1,5 +1,5 @@
 import { useDrizzle } from "../../utils/drizzle";
-import { companies, contacts, assignments, conversationNotes, users, teams, teamMembers } from "../../database/schema";
+import { companies, contacts, assignments, conversationNotes, users, teams, teamMembers, importLogs } from "../../database/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 import { createAuth } from "../../lib/auth";
 import { createAutoTask } from "../../utils/createAutoTask";
@@ -29,7 +29,7 @@ export default eventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const { customers, targetTeamId, targetAgentId } = body;
+    const { customers, targetTeamId, targetAgentId, projectName } = body;
 
     // 3. Validierung der Zielzuweisung
     const db = useDrizzle(event);
@@ -100,6 +100,7 @@ export default eventHandler(async (event) => {
         failed: 0,
         created: 0,
         updated: 0,
+        assigned: 0, // New assignments count
         errors: [] as string[],
         details: [] as Array<{ company: string; action: string; contactsAdded: number }>,
     };
@@ -122,6 +123,22 @@ export default eventHandler(async (event) => {
         if (amount < 10000000) return "5 Mio. € - 10 Mio. €";
         if (amount < 50000000) return "10 Mio. € - 50 Mio. €";
         return "> 50 Mio. €";
+    };
+
+    // Helper function to parse employee count from "Staffel" format (e.g., "21 - 50" -> 35)
+    const parseEmployeeCount = (value: any): number => {
+        if (!value) return 0;
+        const str = value.toString();
+        // If it's already a number, return it
+        if (!isNaN(parseFloat(str))) return parseInt(str);
+        // If it's in "X - Y" format, take the middle value
+        const match = str.match(/(\d+)\s*-\s*(\d+)/);
+        if (match) {
+            const min = parseInt(match[1]);
+            const max = parseInt(match[2]);
+            return Math.floor((min + max) / 2);
+        }
+        return 0;
     };
 
     // ZEILEN NACH FIRMENNAME GRUPPIEREN
@@ -197,20 +214,20 @@ export default eventHandler(async (event) => {
                     .update(companies)
                     .set({
                         name: companyName,
-                        industry: companyData.Branche || companyData.industry,
+                        industry: companyData["Branche-Text-1"] || companyData.Branche || companyData.industry,
                         website: companyData.Webseite || companyData.website,
                         phone: companyData.Telefon || companyData.phone || companyData.phoneNumber,
-                        email: companyData.Email || companyData.email,
-                        street: companyData.Straße || companyData.street || companyData.streetAddress,
-                        postalCode: companyData.PLZ || companyData.postalCode,
-                        city: companyData.Stadt || companyData.Ort || companyData.city,
-                        state: companyData.Bundesland || companyData.state,
-                        employeeCount: parseInt(companyData.Mitarbeiter || companyData.employeeCount) || 0,
-                        revenueSize: mapRevenueToRange(companyData.Umsatz || companyData.revenueSize),
+                        email: companyData["E-Mail-büro"] || companyData.Email || companyData.email,
+                        street: companyData["STR. HNR"] || companyData.Straße || companyData.street || companyData.streetAddress,
+                        postalCode: companyData.Plz || companyData.PLZ || companyData.postalCode,
+                        city: companyData.Ort || companyData.Stadt || companyData.city,
+                        state: companyData["Bundesland / Bezirk"] || companyData.Bundesland || companyData.state,
+                        employeeCount: parseEmployeeCount(companyData["Mitarbeiter (Staffel)"] || companyData.Mitarbeiter || companyData.employeeCount),
+                        revenueSize: companyData["Umsatz (Staffel)"] || mapRevenueToRange(companyData.Umsatz || companyData.revenueSize),
                         legalForm: companyData.Rechtsform || companyData.companyForm,
-                        description: companyData.Beschreibung || companyData.description,
+                        description: companyData.Gegenstand || companyData.Beschreibung || companyData.description,
                         foundingDate: companyData.Gründung || companyData.foundingDate,
-                        project: companyData.Projekt || companyData.project,
+                        project: projectName || companyData.Projekt || companyData.project,
                         openingHours: companyData.Öffnungszeiten || companyData.openingHours,
                         updatedAt: new Date(),
                     })
@@ -222,24 +239,33 @@ export default eventHandler(async (event) => {
                     .from(contacts)
                     .where(eq(contacts.companyId, companyId));
 
-                // Neue Kontakte hinzufügen
+                // Neue Kontakte batch-insert (N+1 önleme)
+                const contactValues: Array<Record<string, unknown>> = [];
+                let isFirst = existingContacts.length === 0;
                 for (const row of rows) {
-                    if (row.Vorname || row.firstName || row.Ansprechpartner) {
-                        await db.insert(contacts).values({
+                    if (row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner) {
+                        const role = row["Person-Funktion"] || row.Position || row.position;
+                        const activity = row["Person-Tätigkeit"];
+                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || null;
+                        contactValues.push({
                             companyId: companyId,
-                            firstName: row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
-                            lastName: row.Nachname || row.lastName || "",
-                            email: row.KontaktEmail || row.contactEmail || row.Email || "",
-                            phone: row.KontaktTelefon || row.contactPhone || row.Telefon || "",
-                            position: row.Position || row.position,
-                            isPrimary: existingContacts.length === 0 && contactsAddedCount === 0, // Erster Kontakt ist primär wenn noch keine existieren
-                            birthDate: row.Geburtsdatum || row.birthDate,
-                            linkedin: row.LinkedIn || row.linkedin,
-                            xing: row.Xing || row.xing,
+                            firstName: row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
+                            lastName: row["Person-Nachname"] || row.Nachname || row.lastName || "",
+                            email: row["Person-E-Mail"] || row.KontaktEmail || row.contactEmail || row.Email || "",
+                            phone: row["Person-Telefon"] || row.KontaktTelefon || row.contactPhone || row.Telefon || "",
+                            position: combinedPosition,
+                            isPrimary: isFirst,
+                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate,
+                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin,
+                            xing: row["Person-Xing"] || row.Xing || row.xing,
                             facebook: row.Facebook || row.facebook,
                         });
+                        isFirst = false;
                         contactsAddedCount++;
                     }
+                }
+                if (contactValues.length > 0) {
+                    await db.insert(contacts).values(contactValues as any);
                 }
 
                 if (isUpdate) {
@@ -252,20 +278,20 @@ export default eventHandler(async (event) => {
                     .insert(companies)
                     .values({
                         name: companyName,
-                        industry: companyData.Branche || companyData.industry,
+                        industry: companyData["Branche-Text-1"] || companyData.Branche || companyData.industry,
                         website: companyData.Webseite || companyData.website,
                         phone: companyData.Telefon || companyData.phone || companyData.phoneNumber,
-                        email: companyData.Email || companyData.email,
-                        street: companyData.Straße || companyData.street || companyData.streetAddress,
-                        postalCode: companyData.PLZ || companyData.postalCode,
-                        city: companyData.Stadt || companyData.Ort || companyData.city,
-                        state: companyData.Bundesland || companyData.state,
-                        employeeCount: parseInt(companyData.Mitarbeiter || companyData.employeeCount) || 0,
-                        revenueSize: mapRevenueToRange(companyData.Umsatz || companyData.revenueSize),
+                        email: companyData["E-Mail-büro"] || companyData.Email || companyData.email,
+                        street: companyData["STR. HNR"] || companyData.Straße || companyData.street || companyData.streetAddress,
+                        postalCode: companyData.Plz || companyData.PLZ || companyData.postalCode,
+                        city: companyData.Ort || companyData.Stadt || companyData.city,
+                        state: companyData["Bundesland / Bezirk"] || companyData.Bundesland || companyData.state,
+                        employeeCount: parseEmployeeCount(companyData["Mitarbeiter (Staffel)"] || companyData.Mitarbeiter || companyData.employeeCount),
+                        revenueSize: companyData["Umsatz (Staffel)"] || mapRevenueToRange(companyData.Umsatz || companyData.revenueSize),
                         legalForm: companyData.Rechtsform || companyData.companyForm,
-                        description: companyData.Beschreibung || companyData.description,
+                        description: companyData.Gegenstand || companyData.Beschreibung || companyData.description,
                         foundingDate: companyData.Gründung || companyData.foundingDate,
-                        project: companyData.Projekt || companyData.project,
+                        project: projectName || companyData.Projekt || companyData.project,
                         openingHours: companyData.Öffnungszeiten || companyData.openingHours,
                     })
                     .returning()
@@ -277,24 +303,31 @@ export default eventHandler(async (event) => {
 
                 companyId = newCompany.id;
 
-                // Kontakte erstellen
-                for (const [index, row] of rows.entries()) {
-                    if (row.Vorname || row.firstName || row.Ansprechpartner) {
-                        await db.insert(contacts).values({
+                // Kontakte batch-insert (N+1 önleme)
+                const newContactValues: Array<Record<string, unknown>> = [];
+                rows.forEach((row, index) => {
+                    if (row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner) {
+                        const role = row["Person-Funktion"] || row.Position || row.position;
+                        const activity = row["Person-Tätigkeit"];
+                        const combinedPosition = role && activity ? `${role} – ${activity}` : role || activity || null;
+                        newContactValues.push({
                             companyId: companyId,
-                            firstName: row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
-                            lastName: row.Nachname || row.lastName || "",
-                            email: row.KontaktEmail || row.contactEmail || row.Email || "",
-                            phone: row.KontaktTelefon || row.contactPhone || row.Telefon || "",
-                            position: row.Position || row.position,
+                            firstName: row["Person-Vorname"] || row.Vorname || row.firstName || row.Ansprechpartner || "Unbekannt",
+                            lastName: row["Person-Nachname"] || row.Nachname || row.lastName || "",
+                            email: row["Person-E-Mail"] || row.KontaktEmail || row.contactEmail || row.Email || "",
+                            phone: row["Person-Telefon"] || row.KontaktTelefon || row.contactPhone || row.Telefon || "",
+                            position: combinedPosition,
                             isPrimary: index === 0,
-                            birthDate: row.Geburtsdatum || row.birthDate,
-                            linkedin: row.LinkedIn || row.linkedin,
-                            xing: row.Xing || row.xing,
+                            birthDate: row["Person-Geboren"] || row.Geburtsdatum || row.birthDate,
+                            linkedin: row["Person-LinkedIn"] || row.LinkedIn || row.linkedin,
+                            xing: row["Person-Xing"] || row.Xing || row.xing,
                             facebook: row.Facebook || row.facebook,
                         });
                         contactsAddedCount++;
                     }
+                });
+                if (newContactValues.length > 0) {
+                    await db.insert(contacts).values(newContactValues as any);
                 }
 
                 // Leere Gesprächsnotiz erstellen (nur für neue Firmen)
@@ -316,6 +349,11 @@ export default eventHandler(async (event) => {
                 assignedAt: new Date(),
                 assignedBy: currentUser.id,
             });
+            
+            // Count new assignments
+            if (isNewAssignment) {
+                results.assigned++;
+            }
 
             // 3. Auto-Task erstellen wenn Agent zugewiesen wurde
             if (finalAgentId) {
@@ -348,6 +386,25 @@ export default eventHandler(async (event) => {
             results.failed++;
             results.errors.push(`Import von ${companyKey} fehlgeschlagen: ${error.message}`);
         }
+    }
+
+    // Save import log
+    try {
+        await db.insert(importLogs).values({
+            importedBy: currentUser.id,
+            projectName: projectName || null,
+            targetTeamId: finalTeamId,
+            targetAgentId: finalAgentId,
+            totalRows: customers.length,
+            successCount: results.success,
+            failedCount: results.failed,
+            createdCount: results.created,
+            updatedCount: results.updated,
+            assignedCount: results.assigned,
+        });
+    } catch (logError) {
+        console.error("Fehler beim Speichern des Import-Logs:", logError);
+        // Don't fail the import if log fails
     }
 
     return results;

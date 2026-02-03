@@ -9,6 +9,7 @@
         :pagination="pagination"
         :current-page="currentPage"
         :loading="status === 'pending'"
+        :is-importing="isImporting"
         @select="selectCustomer"
         @import="handleImport"
         @page-change="loadPage"
@@ -269,6 +270,7 @@ const updateResearch = (v) => {
 
 // Import Feedback Modal State
 const showImportFeedback = ref(false);
+const isImporting = ref(false);
 const importResult = ref({
   success: 0,
   failed: 0,
@@ -289,13 +291,16 @@ const closeImportFeedback = () => {
 };
 
 // Handle Excel Import
-const handleImport = async (data, targetTeamId, targetAgentId) => {
-  console.log("Importing data:", data, "Team:", targetTeamId, "Agent:", targetAgentId);
+const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
+  console.log("Importing data:", data, "Team:", targetTeamId, "Agent:", targetAgentId, "Project:", projectName);
   
   if (!data || data.length === 0) {
     alert("Die importierte Datei ist leer.");
     return;
   }
+
+  // Start loading
+  isImporting.value = true;
 
   try {
     const { data: result, error } = await useFetch('/api/customers/import', {
@@ -303,7 +308,8 @@ const handleImport = async (data, targetTeamId, targetAgentId) => {
       body: { 
         customers: data,
         targetTeamId,
-        targetAgentId
+        targetAgentId,
+        projectName
       }
     });
 
@@ -318,8 +324,11 @@ const handleImport = async (data, targetTeamId, targetAgentId) => {
   } catch (err) {
     console.error("Unexpected error during import:", err);
     alert("Ein unerwarteter Fehler ist aufgetreten.");
+  } finally {
+    // Stop loading
+    isImporting.value = false;
+    // Close import modal after completion
+    // This will be handled by watching isImporting in CustomerList
   }
 };
-
-// Page leave warning is handled inside the composable
 </script>

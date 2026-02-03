@@ -38,32 +38,37 @@ export default eventHandler(async (event) => {
         await db.delete(contacts).where(eq(contacts.companyId, companyId));
     }
 
-    // 2. Upsert (Update existing, Insert new)
+    // 2. Upsert (Update existing, Insert new) – N+1 önleme: yeni kayıtları batch insert
+    const toUpdate: Array<{ id: number; data: Record<string, unknown> }> = [];
+    const toInsert: Array<Record<string, unknown>> = [];
     for (const contact of incomingContacts) {
         const contactData = {
             companyId: companyId,
             firstName: contact.firstName,
             lastName: contact.lastName,
             email: contact.email,
-            phone: contact.phoneNumber, // UI uses phoneNumber, DB uses phone
+            phone: contact.phoneNumber,
             position: contact.position,
             birthDate: contact.birthDate,
             isPrimary: contact.isPrimary,
             linkedin: contact.social?.linkedin,
             xing: contact.social?.xing,
             facebook: contact.social?.facebook,
-            notes: contact.notizen, // Map frontend 'notizen' to DB 'notes'
+            notes: contact.notizen,
         };
-
         if (contact.id) {
-            // Update
-            await db.update(contacts)
-                .set(contactData)
-                .where(and(eq(contacts.id, contact.id), eq(contacts.companyId, companyId)));
+            toUpdate.push({ id: contact.id, data: contactData });
         } else {
-            // Insert
-            await db.insert(contacts).values(contactData);
+            toInsert.push(contactData);
         }
+    }
+    for (const { id, data } of toUpdate) {
+        await db.update(contacts)
+            .set(data)
+            .where(and(eq(contacts.id, id), eq(contacts.companyId, companyId)));
+    }
+    if (toInsert.length > 0) {
+        await db.insert(contacts).values(toInsert);
     }
 
     return { success: true };
