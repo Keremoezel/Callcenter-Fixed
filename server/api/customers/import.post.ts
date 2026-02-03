@@ -163,6 +163,7 @@ export default eventHandler(async (event) => {
             companyGroups.set(companyKey, []);
         }
 
+
         companyGroups.get(companyKey)!.push(row);
     }
 

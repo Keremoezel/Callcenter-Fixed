@@ -53,14 +53,21 @@
             <!-- Header -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900">Import Abgeschlossen</h3>
-                <p class="text-sm text-gray-500 mt-0.5">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    {{ isImporting ? 'Importiere Daten...' : 'Import Abgeschlossen' }}
+                </h3>
+                <p v-if="!isImporting" class="text-sm text-gray-500 mt-0.5">
                   {{ importResult.success }} erfolgreich, {{ importResult.failed }} fehlgeschlagen
+                </p>
+                <p v-else class="text-sm text-gray-500 mt-0.5">
+                     Bitte warten Sie, bis der Vorgang abgeschlossen ist.
                 </p>
               </div>
               <button
+                v-if="!isImporting"
                 @click="closeImportFeedback"
                 class="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Schließen"
               >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -70,8 +77,25 @@
 
             <!-- Body -->
             <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
-              <!-- Summary Stats -->
-              <div class="grid grid-cols-3 gap-3 mb-4">
+              
+              <!-- PROGRESS BAR (Visible only during import) -->
+              <div v-if="isImporting" class="mb-6 space-y-4">
+                 <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div 
+                        class="bg-blue-600 h-4 rounded-full transition-all duration-300 ease-out flex items-center justify-center text-[10px] font-bold text-white shadow-sm" 
+                        :style="{ width: `${importProgress}%` }"
+                    >
+                        {{ importProgress }}%
+                    </div>
+                 </div>
+                 <div class="flex justify-between text-sm text-gray-600 font-medium">
+                    <span>{{ importStatusMessage }}</span>
+                    <span v-if="importETA">Verbleibend: {{ importETA }}</span>
+                 </div>
+              </div>
+
+              <!-- Summary Stats (Visible after import or live update) -->
+              <div v-if="!isImporting || importResult.success > 0" class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-green-50 border border-green-200 rounded-lg p-3">
                   <div class="text-2xl font-bold text-green-700">{{ importResult.created }}</div>
                   <div class="text-xs text-green-600">Neu erstellt</div>
@@ -271,6 +295,10 @@ const updateResearch = (v) => {
 // Import Feedback Modal State
 const showImportFeedback = ref(false);
 const isImporting = ref(false);
+const importProgress = ref(0);
+const importETA = ref("");
+const importStatusMessage = ref("");
+
 const importResult = ref({
   success: 0,
   failed: 0,
@@ -290,9 +318,18 @@ const closeImportFeedback = () => {
   window.location.reload(); // Refresh after closing
 };
 
-// Handle Excel Import
+// Helper for nicely formatting duration
+const formatDuration = (ms) => {
+  const seconds = Math.ceil(ms / 1000);
+  if (seconds < 60) return `${seconds} Sekunden`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes} Min. ${remainingSeconds} Sek.`;
+};
+
+// Handle Excel Import with Frontend Chunking
 const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
-  console.log("Importing data:", data, "Team:", targetTeamId, "Agent:", targetAgentId, "Project:", projectName);
+  console.log("Importing data:", data?.length, "rows", "Team:", targetTeamId, "Agent:", targetAgentId);
   
   if (!data || data.length === 0) {
     alert("Die importierte Datei ist leer.");
@@ -301,34 +338,113 @@ const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
 
   // Start loading
   isImporting.value = true;
+  showImportFeedback.value = true;
+  importProgress.value = 0;
+  importETA.value = "Berechnung...";
+  importStatusMessage.value = "Vorbereitung...";
+  
+  // Reset results
+  importResult.value = {
+    success: 0,
+    failed: 0,
+    created: 0,
+    updated: 0,
+    details: [],
+    errors: [],
+  };
+
+
+  const BATCH_SIZE = 30; // Increased batch size slightly for better throughput
+  const CONCURRENCY_LIMIT = 3; // Process 3 batches in parallel
+  
+  const totalRows = data.length;
+  const totalBatches = Math.ceil(totalRows / BATCH_SIZE);
+  const startTime = Date.now();
+  
+  // Helper to process a single batch
+  const processBatch = async (batchIndex) => {
+      const startIdx = batchIndex * BATCH_SIZE;
+      const endIdx = Math.min(startIdx + BATCH_SIZE, totalRows);
+      const batch = data.slice(startIdx, endIdx);
+      
+      try {
+          const response = await $fetch('/api/customers/import', {
+              method: 'POST',
+              body: { 
+                  customers: batch,
+                  targetTeamId,
+                  targetAgentId,
+                  projectName
+              }
+          });
+
+          if (response) {
+              importResult.value.success += response.success || 0;
+              importResult.value.failed += response.failed || 0;
+              importResult.value.created += response.created || 0;
+              importResult.value.updated += response.updated || 0;
+              
+              if (response.details && Array.isArray(response.details)) {
+                   importResult.value.details.push(...response.details);
+              }
+               if (response.errors && Array.isArray(response.errors)) {
+                   importResult.value.errors.push(...response.errors);
+              }
+          }
+      } catch (err) {
+          console.error(`Error in batch ${batchIndex}:`, err);
+          importResult.value.errors.push(`Fehler in Batch ${batchIndex + 1}: ${err.message}`);
+          importResult.value.failed += batch.length;
+      }
+  };
 
   try {
-    const { data: result, error } = await useFetch('/api/customers/import', {
-      method: 'POST',
-      body: { 
-        customers: data,
-        targetTeamId,
-        targetAgentId,
-        projectName
-      }
-    });
+    // Concurrency Pool Logic
+    const batches = Array.from({ length: totalBatches }, (_, i) => i);
+    const activePromises = new Set();
+    let completedBatches = 0;
 
-    if (error.value) {
-      console.error("Import error:", error.value);
-      alert("Fehler beim Importieren der Kunden: " + error.value.message);
-    } else {
-      // Show detailed feedback modal
-      importResult.value = result.value;
-      showImportFeedback.value = true;
+    for (const batchIndex of batches) {
+        // Wait if concurrency limit reached
+        if (activePromises.size >= CONCURRENCY_LIMIT) {
+            await Promise.race(activePromises);
+        }
+
+        const promise = processBatch(batchIndex).then(() => {
+            activePromises.delete(promise);
+            completedBatches++;
+            
+            // Update Progress
+            const batchEndTime = Date.now();
+            const elapsed = batchEndTime - startTime;
+            const progress = completedBatches / totalBatches;
+            importProgress.value = Math.round(progress * 100);
+            
+            importStatusMessage.value = `Verarbeite Batch ${completedBatches} von ${totalBatches} (Pool: ${activePromises.size + 1})...`;
+
+            // Calculate ETA
+            if (progress > 0) {
+                const estimatedTotalTime = elapsed / progress;
+                const remainingTime = estimatedTotalTime - elapsed;
+                importETA.value = formatDuration(remainingTime);
+            }
+        });
+
+        activePromises.add(promise);
     }
+
+    // Wait for all remaining batches
+    await Promise.all(activePromises);
+    
+    importStatusMessage.value = "Fertiggestellt!";
+    importETA.value = "";
+
   } catch (err) {
     console.error("Unexpected error during import:", err);
-    alert("Ein unerwarteter Fehler ist aufgetreten.");
+    importResult.value.errors.push("Ein unerwarteter Fehler hat den Import abgebrochen: " + err.message);
+    alert("Ein Fehler ist aufgetreten. Der Import wurde teilweise abgeschlossen.");
   } finally {
-    // Stop loading
     isImporting.value = false;
-    // Close import modal after completion
-    // This will be handled by watching isImporting in CustomerList
   }
 };
 </script>
