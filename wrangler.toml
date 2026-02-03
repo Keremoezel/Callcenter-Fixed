@@ -1,0 +1,31 @@
+name = "crm-final"
+main = "./.output/server/index.mjs"
+compatibility_date = "2026-01-28"
+
+[assets]
+directory = "./.output/public/"
+binding = "STATIC_ASSETS"
+
+[observability]
+enabled = true
+
+[vars]
+BETTER_AUTH_URL = "https://crm-final.keremoezel.workers.dev"
+
+# Bu kısım PRODUCTION (Ana DB)
+[[d1_databases]]
+binding = "DB"
+database_name = "crm-final-db"
+database_id = "829ca3f3-9ede-4d3c-a700-165fb50b30bb"
+migrations_dir = "./server/database/migrations"
+
+# Bu kısım PREVIEW (Yeni DB)
+[env.preview]
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "crm-final-preview" # Senin bulduğun isim
+database_id = "4de03627-ec8a-48dd-94c6-d9b8f71bd525" # Senin bulduğun ID
+migrations_dir = "./server/database/migrations"
+
+[env.preview.vars]
+BETTER_AUTH_URL = "https://preview.crm-final.pages.dev"

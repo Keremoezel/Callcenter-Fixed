@@ -20,5 +20,20 @@
       "database_id": "829ca3f3-9ede-4d3c-a700-165fb50b30bb",
       "migrations_dir": "./server/database/migrations"
     }
-  ]
+  ],
+  "env": {
+    "preview": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "crm-preview-db",
+          "database_id": "b4311278-470d-4b69-8d4f-a97d7b570be6",
+          "migrations_dir": "./server/database/migrations"
+        }
+      ],
+      "vars": {
+        "BETTER_AUTH_URL": "https://preview.crm-final.pages.dev"
+      }
+    }
+  }
 }
