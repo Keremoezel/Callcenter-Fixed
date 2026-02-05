@@ -112,12 +112,13 @@
 
               <!-- Details List -->
               <div v-if="importResult.details && importResult.details.length > 0" class="space-y-2">
-                <h4 class="text-sm font-medium text-gray-700 mb-2">Details:</h4>
-                <div
-                  v-for="(detail, index) in importResult.details"
-                  :key="index"
-                  class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-                >
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Details ({{ importResult.details.length }}):</h4>
+                <div class="max-h-[400px] overflow-y-auto space-y-2 pr-1">
+                  <div
+                    v-for="(detail, index) in importResult.details"
+                    :key="index"
+                    class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  >
                   <!-- Icon -->
                   <div class="flex-shrink-0 mt-0.5">
                     <!-- Neu erstellt -->
@@ -164,6 +165,7 @@
                         • {{ detail.contactsAdded }} Kontakt{{ detail.contactsAdded > 1 ? 'e' : '' }} hinzugefügt
                       </span>
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -354,8 +356,8 @@ const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
   };
 
 
-  const BATCH_SIZE = 50; // Increased to 50 for better speed (D1 limit is ~1000 params, 50 * ~10 fields = ~500 params safe)
-  const CONCURRENCY_LIMIT = 6; // Process 6 batches in parallel for high throughput
+  const BATCH_SIZE = 75; // Optimized to 75 for faster speed (D1 limit is ~1000 params, 75 * ~10 fields = ~750 params safe)
+  const CONCURRENCY_LIMIT = 8; // Process 8 batches in parallel for maximum throughput
   
   const totalRows = data.length;
   const totalBatches = Math.ceil(totalRows / BATCH_SIZE);
@@ -374,7 +376,8 @@ const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
                   customers: batch,
                   targetTeamId,
                   targetAgentId,
-                  projectName
+                  projectName,
+                  skipLog: true // Skip logging for batch calls
               }
           });
 
@@ -438,6 +441,27 @@ const handleImport = async (data, targetTeamId, targetAgentId, projectName) => {
     
     importStatusMessage.value = "Fertiggestellt!";
     importETA.value = "";
+
+    // Create ONE consolidated import log after all batches complete
+    try {
+      await $fetch('/api/customers/import-log', {
+        method: 'POST',
+        body: {
+          targetTeamId,
+          targetAgentId,
+          projectName,
+          totalRows: totalRows,
+          successCount: importResult.value.success,
+          failedCount: importResult.value.failed,
+          createdCount: importResult.value.created,
+          updatedCount: importResult.value.updated,
+          assignedCount: importResult.value.created + importResult.value.updated
+        }
+      });
+    } catch (logErr) {
+      console.error('Error creating import log:', logErr);
+      // Don't fail the import if logging fails
+    }
 
   } catch (err) {
     console.error("Unexpected error during import:", err);

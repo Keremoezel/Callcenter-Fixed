@@ -30,7 +30,7 @@ export default eventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const { customers, targetTeamId, targetAgentId, projectName } = body;
+    const { customers, targetTeamId, targetAgentId, projectName, skipLog } = body;
 
     // 3. Validierung der Zielzuweisung
     const db = useDrizzle(event);
@@ -392,23 +392,25 @@ export default eventHandler(async (event) => {
         }
     }
 
-    // Save import log
-    try {
-        await db.insert(importLogs).values({
-            importedBy: currentUser.id,
-            projectName: projectName || undefined,
-            targetTeamId: finalTeamId ? Number(finalTeamId) : undefined,
-            targetAgentId: finalAgentId || undefined,
-            totalRows: customers.length,
-            successCount: results.success,
-            failedCount: results.failed,
-            createdCount: results.created,
-            updatedCount: results.updated,
-            assignedCount: results.assigned,
-        });
-    } catch (logError) {
-        console.error("Fehler beim Speichern des Import-Logs:", logError);
-        // Don't fail the import if log fails
+    // Save import log (skip if this is a batch call)
+    if (!skipLog) {
+        try {
+            await db.insert(importLogs).values({
+                importedBy: currentUser.id,
+                projectName: projectName || undefined,
+                targetTeamId: finalTeamId ? Number(finalTeamId) : undefined,
+                targetAgentId: finalAgentId || undefined,
+                totalRows: customers.length,
+                successCount: results.success,
+                failedCount: results.failed,
+                createdCount: results.created,
+                updatedCount: results.updated,
+                assignedCount: results.assigned,
+            });
+        } catch (logError) {
+            console.error("Fehler beim Speichern des Import-Logs:", logError);
+            // Don't fail the import if log fails
+        }
     }
 
     return results;

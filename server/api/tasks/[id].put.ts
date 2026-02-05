@@ -34,11 +34,17 @@ export default eventHandler(async (event) => {
     }
 
     // Validate enum values (security: prevent arbitrary values)
-    const validStatuses = ["Open", "In Progress", "Erledigt", "Cancelled"];
-    const validPriorities = ["Low", "Medium", "High"];
+    // Accept both English and German values to support frontend
+    const validStatuses = [
+        "Open", "In Progress", "Erledigt", "Cancelled",
+        "Nicht angefasst", "angefasst", "Recherchiert", "Bearbeitet",
+        "Liegt auf Wiedervorlage", "Nicht erreicht"
+    ];
+    const validPriorities = ["Low", "Medium", "High", "Niedrig", "Mittel", "Hoch"];
 
     const status = validStatuses.includes(body.status) ? body.status : oldTask.status;
     const priority = validPriorities.includes(body.priority) ? body.priority : "Medium";
+
 
     // Validate and sanitize inputs
     const title = body.title ? String(body.title).slice(0, 255) : oldTask.title;

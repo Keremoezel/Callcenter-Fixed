@@ -51,7 +51,7 @@ export default eventHandler(async (event) => {
     // 4. Find all companies belonging to this import
     // Use the import log's createdAt time to find companies created around that time
     let importStartTime: Date;
-    
+
     if (log.createdAt instanceof Date) {
         importStartTime = log.createdAt;
     } else if (typeof log.createdAt === 'number') {
@@ -68,11 +68,13 @@ export default eventHandler(async (event) => {
             deletedCompanies: 0,
         };
     }
-    
-    const importEndTime = new Date(importStartTime.getTime() + 10000); // 10 seconds tolerance
-    
+
+    // Import log is created AFTER all batches complete, so look backward
+    const importEndTime = importStartTime;
+    const importStartWindow = new Date(importStartTime.getTime() - 300000); // Look back 5 minutes for batched imports
+
     // Validate dates
-    if (isNaN(importStartTime.getTime()) || isNaN(importEndTime.getTime())) {
+    if (isNaN(importStartWindow.getTime()) || isNaN(importEndTime.getTime())) {
         // If dates are invalid, skip company deletion but still delete the log
         console.warn(`Import log ${logId} has invalid timestamp, skipping company deletion`);
         await db.delete(importLogs).where(eq(importLogs.id, logId));
@@ -82,7 +84,7 @@ export default eventHandler(async (event) => {
             deletedCompanies: 0,
         };
     }
-    
+
     // Find assignments created in the same time range by the same user
     // Use the import log's createdAt time and importedBy information to find assignments
     const relatedAssignments = await db
@@ -90,7 +92,7 @@ export default eventHandler(async (event) => {
         .from(assignments)
         .where(
             and(
-                gte(assignments.assignedAt, importStartTime),
+                gte(assignments.assignedAt, importStartWindow),
                 lte(assignments.assignedAt, importEndTime),
                 eq(assignments.assignedBy, log.importedBy)
             )
@@ -102,25 +104,25 @@ export default eventHandler(async (event) => {
 
     if (companyIds.length > 0) {
         // 5. Delete related data (cascade order)
-        
+
         // 5.1. Delete activities
         await db.delete(activities).where(inArray(activities.companyId, companyIds as number[]));
-        
+
         // 5.2. Delete tasks
         await db.delete(tasks).where(inArray(tasks.companyId, companyIds as number[]));
-        
+
         // 5.3. Delete conversation notes
         await db.delete(conversationNotes).where(inArray(conversationNotes.companyId, companyIds as number[]));
-        
+
         // 5.4. Delete contacts
         await db.delete(contacts).where(inArray(contacts.companyId, companyIds as number[]));
-        
+
         // 5.5. Delete assignments
         await db.delete(assignments).where(inArray(assignments.companyId, companyIds as number[]));
-        
+
         // 5.6. Delete companies
         await db.delete(companies).where(inArray(companies.id, companyIds as number[]));
-        
+
         deletedCount = companyIds.length;
     }
 

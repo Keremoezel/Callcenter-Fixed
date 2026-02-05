@@ -39,8 +39,8 @@ export default eventHandler(async (event) => {
   const filterLastActivity = query.lastActivity as string | undefined;
   const filterDate = query.date as string | undefined;
 
-  let allowedCompanyIds: number[] | undefined = undefined;
   let filterCompanyIds: number[] | undefined = undefined;
+
 
   // Apply agent/team filters first (if any) to get matching company IDs
   if (filterAgent || filterTeam) {
@@ -71,104 +71,92 @@ export default eventHandler(async (event) => {
 
   // 2. Determine Visibility Scope and Task Filtering
   let allowedTaskAssignees: string[] | undefined = undefined; // For task filtering
+  let roleBasedCondition: any = undefined; // For SQL subquery instead of in-memory filtering
 
   if (role === "Admin") {
-    // Admin sees ALL (allowedCompanyIds stays undefined = no filter)
-    allowedCompanyIds = undefined;
+    // Admin sees ALL (no filter needed)
+    roleBasedCondition = undefined;
     allowedTaskAssignees = undefined; // See all tasks
   } else if (role === "Teamlead") {
     // Teamlead: See customers assigned to:
     // a) Their Assignments (Direct)
     // b) Their Teams (By Team ID)
-    // c) Their Team Members (By Agent ID of member) - Wait, "Teamleaders only the customers that is assigned to him or his team" 
-    // Usually "assigned to his team" means assigned to the Team entity OR assigned to a user IN that team.
-    // Let's implement: Assigned to Team OR Assigned to Me. ( Simplest interpretation of "his team")
-    // If user meant "assigned to any agent who is in my team", I'd need to fetch team members.
-    // The prompt says "assigned to him or his team".
-    // I will fetch ids for assignments where (teamId IN myTeams) OR (agentId == me).
+    // c) Their Team Members (By Agent ID of member)
 
     const myLedTeams = await db.select().from(teams).where(eq(teams.teamleadId, currentUser.id));
     const myTeamIds = myLedTeams.map(t => t.id);
 
-    // Find assignments matching criteria
-    const whereConditions = [eq(assignments.agentId, currentUser.id)];
-    let memberIds: string[] = []; // Define memberIds outside the if block
+    // Build assignment conditions
+    const assignmentConditions = [eq(assignments.agentId, currentUser.id)];
+    let memberIds: string[] = [];
 
     if (myTeamIds.length > 0) {
-      whereConditions.push(inArray(assignments.teamId, myTeamIds));
+      assignmentConditions.push(inArray(assignments.teamId, myTeamIds));
 
-      // Also include assignments to AGENTS who are in my team?
-      // User said: "teamleaders can do imports for his own teams... teamleaders only the customers that is assigned to him or his team"
-      // I'll stick to direct ID and Team ID assignment for now. If an agent in the team has a personal assignment that isn't via Team ID, it might be excluded unless I fetch all members.
-      // Let's fetch all members to be safe and thorough.
+      // Fetch team members
       const memberRecords = await db.select()
         .from(teamMembers)
         .where(inArray(teamMembers.teamId, myTeamIds));
       memberIds = memberRecords.map(m => m.userId);
       if (memberIds.length > 0) {
-        whereConditions.push(inArray(assignments.agentId, memberIds));
+        assignmentConditions.push(inArray(assignments.agentId, memberIds));
       }
     }
 
-    const relevantAssignments = await db.select()
-      .from(assignments)
-      .where(or(...whereConditions));
-
-    allowedCompanyIds = relevantAssignments.map(a => a.companyId);
+    // Use SQL subquery instead of loading all IDs
+    roleBasedCondition = sql`${companies.id} IN (
+      SELECT DISTINCT ${assignments.companyId} 
+      FROM ${assignments} 
+      WHERE ${or(...assignmentConditions)}
+    )`;
 
     // Teamleads can see tasks assigned to them or their team members
     allowedTaskAssignees = [currentUser.id, ...memberIds];
 
   } else {
     // Agent: See ONLY customers assigned to self
-    const myAssignments = await db.select()
-      .from(assignments)
-      .where(eq(assignments.agentId, currentUser.id));
 
-    allowedCompanyIds = myAssignments.map(a => a.companyId);
+    // Use SQL subquery instead of loading all IDs
+    roleBasedCondition = sql`${companies.id} IN (
+      SELECT DISTINCT ${assignments.companyId} 
+      FROM ${assignments} 
+      WHERE ${assignments.agentId} = ${currentUser.id}
+    )`;
 
     // Agents can ONLY see their own tasks
     allowedTaskAssignees = [currentUser.id];
   }
 
-  // If filtered role returns NO companies, return empty early
-  if (allowedCompanyIds !== undefined && allowedCompanyIds.length === 0) {
-    return {
-      data: [],
-      pagination: {
-        total: 0,
-        page,
-        limit,
-        pages: 0,
-      },
-    };
-  }
-
   // Build where conditions
   const whereConditions: any[] = [];
 
-  // Combine role-based visibility with filter-based visibility
-  let finalAllowedIds = allowedCompanyIds;
-
-  if (filterCompanyIds) {
-    if (allowedCompanyIds) {
-      // Intersection: only show companies that match BOTH role AND filter
-      finalAllowedIds = allowedCompanyIds.filter(id => filterCompanyIds!.includes(id));
-    } else {
-      // Admin with filter: use filter ids
-      finalAllowedIds = filterCompanyIds;
-    }
+  // Add role-based condition if it exists
+  if (roleBasedCondition) {
+    whereConditions.push(roleBasedCondition);
   }
 
-  // Apply final ID filter
-  if (finalAllowedIds && finalAllowedIds.length > 0) {
-    whereConditions.push(inArray(companies.id, finalAllowedIds));
-  } else if (finalAllowedIds && finalAllowedIds.length === 0) {
-    // No companies match - return empty
-    return {
-      data: [],
-      pagination: { total: 0, page, limit, pages: 0 },
-    };
+  // Apply filter-based visibility (agent/team filters)
+  if (filterCompanyIds) {
+    if (filterCompanyIds.length === 0) {
+      // No companies match the filter
+      return {
+        data: [],
+        pagination: { total: 0, page, limit, pages: 0 },
+      };
+    }
+
+    // Batch the filter IDs if there are too many (> 500)
+    if (filterCompanyIds.length > 500) {
+      // Use SQL IN with batches
+      const batches: any[] = [];
+      for (let i = 0; i < filterCompanyIds.length; i += 500) {
+        const batch = filterCompanyIds.slice(i, i + 500);
+        batches.push(inArray(companies.id, batch));
+      }
+      whereConditions.push(or(...batches));
+    } else {
+      whereConditions.push(inArray(companies.id, filterCompanyIds));
+    }
   }
 
   // Search filter (company name)
@@ -225,6 +213,12 @@ export default eventHandler(async (event) => {
       // Intersect with existing filterCompanyIds
       if (filterCompanyIds) {
         filterCompanyIds = filterCompanyIds.filter(id => assignedCompanyIds.includes(id));
+        if (filterCompanyIds.length === 0) {
+          return {
+            data: [],
+            pagination: { total: 0, page, limit, pages: 0 },
+          };
+        }
       } else {
         filterCompanyIds = assignedCompanyIds;
       }
@@ -236,6 +230,7 @@ export default eventHandler(async (event) => {
       };
     }
   }
+
 
   // Last activity filter (tasks or notes)
   // TODO: Implement lastActivity filter - requires proper join query on tasks/activities tables
